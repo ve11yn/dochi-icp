@@ -1,12 +1,11 @@
-import './App.css'
-import Dochi from './typescripts/dochi'
+import Landing from './typescripts/landing'
 
 function App() {
 
   return (
     <>
       <div className=' min-h-screen w-full'>
-        <Dochi width="50vw" height="50vh" />
+        <Landing/>
       </div>    
     </>
   )
