@@ -1,0 +1,10 @@
+# DFX
+.dfx/
+.vessel/
+canister_ids.json
+
+# Motoko
+.moc/
+
+# Logs
+*.log

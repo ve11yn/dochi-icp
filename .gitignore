@@ -1,0 +1,56 @@
+# Dependencies
+node_modules/
+dochi_frontend/node_modules/
+
+# Build outputs
+.dfx/
+dist/
+build/
+dochi_frontend/dist/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Generated declarations
+dochi_frontend/src/declarations/
+
+# IDE files
+.vscode/settings.json
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# WSL/Linux specific
+.*~
+*~
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory
+coverage/
+
+# Canister IDs (auto-generated, but you might want to keep these)
+canister_ids.json
+
+# Temporary files
+*.tmp
+*.temp
+
+# DFX
+.vessel/
