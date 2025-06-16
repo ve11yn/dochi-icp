@@ -1,25 +1,25 @@
 import bg from '../assets/bg.jpg';
 
-function FlippedGradientBackground({ children }) {
+interface FlippedGradientBackgroundProps {
+  children: React.ReactNode;
+}
+
+function FlippedGradientBackground({ children }: FlippedGradientBackgroundProps) {
   return (
-    <div className="relative w-full min-h-screen">
-      {/* Background Image - flipped */}
-      <div 
-        className="absolute inset-0 w-full h-full"
+    <div className="h-300 w-screen relative m-0 p-0">
+      {/* Background Image */}
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat w-full h-full"
         style={{
-          backgroundImage: `url(${bg})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-          transform: 'rotate(180deg)' // This flips the gradient
+          backgroundImage: `url(${bg})`
         }}
       />
       
-      {/* White Fade Overlay - starts from top (which is now bottom due to flip) */}
-      <div 
+      {/* Inverted White Fade Overlay - fades upward from bottom */}
+      <div
         className="absolute inset-0 w-full h-full"
         style={{
-          background: 'linear-gradient(180deg, white 0%, rgba(255,255,255,0.8) 20%, transparent 40%, transparent 100%)'
+          background: 'linear-gradient(0deg, transparent 0%, transparent 20%, rgba(255,255,255,0.9) 40%, white 50%)'
         }}
       />
       
