@@ -9,7 +9,7 @@ interface DochiProps {
 
 export default function Dochi({ width = '100%', height = '100%' }: DochiProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const animationRef = useRef<number>()
+  const animationRef = useRef<number>(0)
   
   useEffect(() => {
     const canvas = canvasRef.current

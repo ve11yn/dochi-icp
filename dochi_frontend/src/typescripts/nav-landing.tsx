@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 
 function NavLanding() {
   return (
@@ -6,6 +7,7 @@ function NavLanding() {
         <h1 className="text-2xl font-bold text-gray-900 italic">Dochi</h1>
 
         <div className="flex items-center space-x-8">
+          {/* These can remain as `a` tags if they link to sections on the same page */}
           <a href="#features" className="text-gray-700 hover:text-gray-500 font-small transition-colors">
             Features
           </a>
@@ -15,9 +17,18 @@ function NavLanding() {
           <a href="#contact" className="text-gray-700 hover:text-gray-500 font-small transition-colors">
             Contact Us
           </a>
-            <a href="#login" className="bg-white text-gray-700 px-4 py-1 rounded-full border border-gray-300 hover:bg-gray-50 hover:border-gray-400 font-medium transition-all shadow-sm">
+
+          {/* This is our new link to the calendar page */}
+          <Link
+            to="/calendar"
+            className="text-gray-700 hover:text-gray-500 font-small transition-colors"
+          >
+            Calendar
+          </Link>
+
+          <a href="#login" className="bg-white text-gray-700 px-4 py-1 rounded-full border border-gray-300 hover:bg-gray-50 hover:border-gray-400 font-medium transition-all shadow-sm">
             Login
-            </a>
+          </a>
         </div>
       </div>
     </>
