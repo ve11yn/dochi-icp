@@ -7,7 +7,6 @@ function NavLanding() {
         <h1 className="text-2xl font-bold text-gray-900 italic">Dochi</h1>
 
         <div className="flex items-center space-x-8">
-          {/* These can remain as `a` tags if they link to sections on the same page */}
           <a href="#features" className="text-gray-700 hover:text-gray-500 font-small transition-colors">
             Features
           </a>
@@ -18,7 +17,6 @@ function NavLanding() {
             Contact Us
           </a>
 
-          {/* This is our new link to the calendar page */}
           <Link
             to="/calendar"
             className="text-gray-700 hover:text-gray-500 font-small transition-colors"

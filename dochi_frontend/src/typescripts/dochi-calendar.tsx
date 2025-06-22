@@ -20,6 +20,7 @@ import {
 } from "lucide-react"
 import { useState, useEffect, useMemo } from "react"
 import Sidebar from "./sidebar"; // Import the new Sidebar component
+import Header from "./header"
 
 // A simple component to display for different pages
 function PageContent({ title }: { title: string }) {
@@ -318,9 +319,7 @@ export default function DochiCalendar() {
         `}</style>
 
       <main className="flex-1 flex flex-col min-w-0">
-        <header className="bg-white border-b border-gray-200 px-8 py-4 h-16 flex items-center flex-shrink-0">
-          <h1 className="text-xl font-bold text-gray-800">{currentPage}</h1>
-        </header>
+        <Header currentPage="Calendar"/>
 
         <div
           className="flex-1 overflow-auto p-8"

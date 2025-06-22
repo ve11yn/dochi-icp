@@ -1,8 +1,9 @@
+import Header from "./header";
 
 const Settings = () => {
     return (
         <div>
-            <h1>Settings</h1>
+            <Header currentPage="Settings"/>
         </div>
     )
 }

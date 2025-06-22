@@ -1,8 +1,9 @@
+import Header from "./header";
 
 const Support = () => {
     return (
         <div>
-            <h1>Support</h1>
+            <Header currentPage="Support"/>
         </div>
     )
 }

@@ -1,8 +1,9 @@
+import Header from "./header";
 
 const Focus = () => {
     return (
         <div>
-            <h1>Focus page</h1>
+            <Header currentPage="Focus"/>
         </div>
     )
 }

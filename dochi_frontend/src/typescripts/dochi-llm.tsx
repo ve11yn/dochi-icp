@@ -1,8 +1,9 @@
+import Header from "./header";
 
 const DochiLLM = () => {
     return (
         <div>
-            <h1>Dochi LLM</h1>
+            <Header currentPage="Dochi"/>
         </div>
     )
 }

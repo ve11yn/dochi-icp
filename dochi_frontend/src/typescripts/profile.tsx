@@ -1,8 +1,10 @@
+import Header from "./header";
 
 const Profile = () => {
     return (
         <div>
-            <h1>Profile</h1>
+            <Header currentPage='Profile'/>
+
         </div>
     )
 }

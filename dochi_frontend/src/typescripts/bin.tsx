@@ -1,8 +1,9 @@
+import Header from "./header";
 
 const Bin = () => {
     return (
         <div>
-            <h1>Bin</h1>
+            <Header currentPage="Bin"/>
         </div>
     )
 }
