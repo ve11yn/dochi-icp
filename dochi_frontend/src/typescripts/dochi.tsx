@@ -3,11 +3,10 @@
 import { useRef, useEffect } from "react"
 
 interface DochiProps {
-  width?: string | number
-  height?: string | number
+  size?: number // Dynamic size prop - can be set from parent components
 }
 
-export default function Dochi({ width = '100%', height = '100%' }: DochiProps) {
+export default function Dochi({ size = 120 }: DochiProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationRef = useRef<number>(0)
   
@@ -18,16 +17,15 @@ export default function Dochi({ width = '100%', height = '100%' }: DochiProps) {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
     
-    // Set canvas size - this is key to removing extra space
+    // Set canvas to square size with proper DPI handling
     const setCanvasSize = () => {
-      const rect = canvas.getBoundingClientRect()
       const dpr = window.devicePixelRatio || 1
       
-      // Use actual container size, not offset size
-      canvas.width = rect.width * dpr
-      canvas.height = rect.height * dpr
-      canvas.style.width = rect.width + 'px'
-      canvas.style.height = rect.height + 'px'
+      // Make canvas square and size it properly
+      canvas.width = size * dpr 
+      canvas.height = size * dpr
+      canvas.style.width = size + 'px'
+      canvas.style.height = size + 'px'
       
       ctx.scale(dpr, dpr)
     }
@@ -36,8 +34,8 @@ export default function Dochi({ width = '100%', height = '100%' }: DochiProps) {
     
     // Orb state
     let time = 0
-    let mouseX = canvas.getBoundingClientRect().width / 2
-    let mouseY = canvas.getBoundingClientRect().height / 2
+    let mouseX = size / 2
+    let mouseY = size / 2
     let targetX = 0
     let targetY = 0
     let currentX = 0
@@ -92,48 +90,38 @@ export default function Dochi({ width = '100%', height = '100%' }: DochiProps) {
       ctx.closePath()
     }
     
-    // Handle resize
-    const handleResize = () => {
-      setCanvasSize()
-    }
-    
-    window.addEventListener('resize', handleResize)
-    
     // Handle mouse movement
     const handleMouseMove = (e: MouseEvent) => {
       const rect = canvas.getBoundingClientRect()
       mouseX = e.clientX - rect.left
       mouseY = e.clientY - rect.top
       
-      targetX = (mouseX - rect.width / 2) / rect.width * 20
-      targetY = (mouseY - rect.height / 2) / rect.height * 20
+      // Reduced movement sensitivity for smaller canvas
+      targetX = (mouseX - size / 2) / size * 15
+      targetY = (mouseY - size / 2) / size * 15
     }
     
     canvas.addEventListener('mousemove', handleMouseMove)
     
     // Animation function
     const animate = () => {
-      const rect = canvas.getBoundingClientRect()
-      const width = rect.width
-      const height = rect.height
-      
-      ctx.clearRect(0, 0, width, height)
+      ctx.clearRect(0, 0, size, size)
       
       time += 0.016
       
       currentX += (targetX - currentX) * 0.1
       currentY += (targetY - currentY) * 0.1
       
-      const centerX = width / 2
-      const centerY = height / 2 + Math.sin(time * 0.8) * 10
+      const centerX = size / 2
+      const centerY = size / 2 + Math.sin(time * 0.8) * 5 // Reduced floating movement
       
-      // Make radius larger to fill the container better
-      const radius = Math.min(width, height) * 0.4
+      // Make radius fill most of the canvas with some padding
+      const radius = size * 0.35 // Increased from 0.4 to fill more space
       
       ctx.save()
-      ctx.shadowColor = 'rgba(255, 255, 255, 0)'
-      ctx.shadowBlur = radius * 0.5
-      ctx.shadowOffsetY = radius * 0.15
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.1)'
+      ctx.shadowBlur = radius * 0.3
+      ctx.shadowOffsetY = radius * 0.1
       
       ctx.beginPath()
       createMochiPath(ctx, centerX, centerY, radius, time)
@@ -230,23 +218,24 @@ export default function Dochi({ width = '100%', height = '100%' }: DochiProps) {
     
     return () => {
       canvas.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('resize', handleResize)
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current)
       }
     }
-  }, [])
+  }, [size])
     
   return (
     <div 
       style={{ 
-        width, 
-        height, 
-        margin: 0, 
-        padding: 0, 
-        display: 'block',
+        width: size, 
+        height: size, 
+        display: 'inline-block',
         lineHeight: 0,
-        fontSize: 0
+        fontSize: 0,
+        padding: 0,
+        margin: 0,
+        border: 0,
+        flexShrink: 0 
       }}
     >
       <canvas

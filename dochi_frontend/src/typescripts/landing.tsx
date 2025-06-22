@@ -77,7 +77,7 @@ function Landing() {
                         </p>
                     </div>
                     <div className="flex-shrink-0">
-                        <Dochi width={320} height={320} />
+                        <Dochi size={320}/>
                     </div>
                 </div>
 
@@ -187,7 +187,7 @@ function Landing() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-12 items-start">
                 <div className="text-left">
                     <div className="flex items-center gap-4 mb-6">
-                    <Dochi width={60} height={60} />
+                    <Dochi size={60} />
                     <h1 className="text-3xl font-bold text-gray-900">Dochi.</h1>
                     </div>
                     
