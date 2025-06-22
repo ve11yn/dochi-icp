@@ -294,8 +294,6 @@ export default function DochiCalendar() {
     setActiveSection(page);
     setCurrentPage(page);
     if (windowWidth < 1024) {
-      // It seems mobileMenuOpen is not available here.
-      // Assuming we need to add it to the state.
     }
   }
 
@@ -318,7 +316,6 @@ export default function DochiCalendar() {
                 animation: slide-down 0.2s ease-out forwards;
             }
         `}</style>
-      <Sidebar activeSection={activeSection} handleNavClick={handleNavClick} />
 
       <main className="flex-1 flex flex-col min-w-0">
         <header className="bg-white border-b border-gray-200 px-8 py-4 h-16 flex items-center flex-shrink-0">
