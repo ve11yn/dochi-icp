@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 // Import all your page components
 import Landing from './typescripts/landing';
 import DochiCalendar from './typescripts/dochi-calendar';
-import ToDo from './typescripts/toDo';
+import ToDo from './typescripts/to-do';
 import Focus from './typescripts/focus';
 import DochiLLM from './typescripts/dochi-llm';
 import Bin from './typescripts/bin';
@@ -42,7 +42,6 @@ function App() {
     setActiveSection(page);
   };
 
-  // Show sidebar for all pages except landing and color palette
   const showSidebar = location.pathname !== '/' && location.pathname !== '/colorPalette';
 
   return (

@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "canisters": {
+    "dochi_backend": {
+      "type": "motoko",
+      "main": "dochi_backend/src/dochi_backend/main.mo"
+    },
+    "todo_backend": {
+      "type": "motoko",
+      "main": "dochi_backend/src/dochi_backend/todo.mo"
+    },
+    "dochi_frontend": {
+      "type": "assets",
+      "source": ["dochi_frontend/dist/"],
+      "dependencies": ["dochi_backend", "todo_backend"]
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "networks": {
+    "local": {
+      "bind": "127.0.0.1:4943",
+      "type": "ephemeral"
+    }
+  }
+}

@@ -41,7 +41,7 @@ function Landing() {
             <section id="top" className="pt-50 px-8 pb-20">
                 <div className="max-w-6xl mx-auto text-center">
                     <h1 className="text-5xl font-medium text-gray-900">
-                        Level Up Your <span className="text-gray-900 font-light">Productivity</span>
+                        Level Up Your <span className="bg- font-light">Productivity</span>
                     </h1>
                     <h1 className="text-5xl font-medium text-gray-900 mb-6">
                         Powered by the <span className="text-gray-900 font-light italic">Chain</span>.

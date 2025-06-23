@@ -4,7 +4,6 @@ const Profile = () => {
     return (
         <div>
             <Header currentPage='Profile'/>
-
         </div>
     )
 }
