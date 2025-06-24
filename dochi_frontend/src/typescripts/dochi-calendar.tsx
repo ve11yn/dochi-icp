@@ -17,13 +17,24 @@ import {
   X,
   ClipboardList,
   PlusCircle,
+  Edit2, // Added for edit icon
 } from "lucide-react"
-import { useState, useEffect, useMemo } from "react"
-import Sidebar from "./sidebar"; // Import the new Sidebar component
+import React, { useState, useEffect, useMemo, useRef } from "react"
+import Sidebar from "./sidebar"; 
 import Header from "./header"
 
-// A simple component to display for different pages
-function PageContent({ title }: { title: string }) {
+// Type Definitions
+interface Appointment {
+  id: number;
+  title: string;
+  startTime: string;
+  endTime: string;
+  color: string;
+  category: string;
+  completed: boolean; // Added for dot indicator logic
+}
+
+function PageContent({ title }: { title:string }) {
   return (
     <div className="flex items-center justify-center h-full">
       <h1 className="text-2xl font-bold text-gray-500">{`This is the ${title} page`}</h1>
@@ -38,7 +49,67 @@ const initialAppointmentCategories = [
     { name: "Urgent", color: "#EF4444", textColor: "text-white" },
 ];
 
-const colorPalette = ["#8B5CF6", "#10B981", "#6B7280", "#EF4444", "#3B82F6", "#F59E0B", "#EC4899"];
+// Extracted CreationForm as a standalone component to prevent performance issues
+const CreationForm = ({
+    newAptTitle, setNewAptTitle, appointmentCategories, newAptCategory, setNewAptCategory,
+    isDeletingCategory, handleDeleteCategory, isAddingCategory, setIsAddingCategory,
+    toggleDeleteMode, newCategoryName, setNewCategoryName, newCategoryColor, setNewCategoryColor,
+    handleAddNewCategory, newAptStartTime, setNewAptStartTime, newAptEndTime, setNewAptEndTime,
+    handleSaveNewAppointment, setCreationDropdown, setEditingAppointmentId, setIsCreatingInDropdown
+}) => (
+    <div className="p-2.5 pt-2">
+        <div className="space-y-2 p-1">
+            <input value={newAptTitle} onChange={(e) => setNewAptTitle(e.target.value)} type="text" placeholder="Appointment Name" className="block w-full px-3 py-1.5 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-violet-500 focus:border-violet-500 text-sm"/>
+            <div>
+              <div className="flex flex-wrap gap-2 items-center">
+                  {appointmentCategories.map(cat => (
+                      <button key={cat.name} onClick={() => isDeletingCategory ? handleDeleteCategory(cat.name) : setNewAptCategory(cat.name)} className={`px-3 py-1 text-xs rounded-full transition-all relative group ${newAptCategory === cat.name && !isDeletingCategory ? `font-semibold shadow-md` : 'bg-white text-gray-700 hover:bg-gray-100 border'}`} style={newAptCategory === cat.name && !isDeletingCategory ? {backgroundColor: cat.color, color: 'white'} : {}}>
+                          {cat.name}
+                          {isDeletingCategory && <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">&times;</div>}
+                      </button>
+                  ))}
+                  {isAddingCategory ? (
+                      <button onClick={() => setIsAddingCategory(false)} className="w-6 h-6 rounded-full flex items-center justify-center bg-red-100 text-red-500 transition-colors">
+                          <X className="w-4 h-4" />
+                      </button>
+                  ) : (
+                      <button onClick={() => { setIsAddingCategory(true); }} className="w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-600 transition-colors">+</button>
+                  )}
+                  <button onClick={toggleDeleteMode} className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${isDeletingCategory ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}><Trash2 className="w-3.5 h-3.5"/></button>
+              </div>
+              {isAddingCategory && (
+                  <div className="p-2 mt-2 space-y-2.5 border-t">
+                      <input value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} type="text" placeholder="New Category Name" className="block w-full px-3 py-1 bg-white border border-gray-300 rounded-md text-xs"/>
+                      <div className="flex items-center gap-2">
+                          <input
+                              type="color"
+                              value={newCategoryColor}
+                              onChange={(e) => setNewCategoryColor(e.target.value)}
+                              className="h-6 w-6 p-0 border-none rounded-md cursor-pointer bg-white"
+                          />
+                           <input
+                              type="text"
+                              value={newCategoryColor}
+                              onChange={(e) => setNewCategoryColor(e.target.value)}
+                              placeholder="#RRGGBB"
+                              className="block w-full px-2 py-1 bg-white border border-gray-300 rounded-md text-xs font-mono"
+                          />
+                      </div>
+                      <Button size="sm" onClick={handleAddNewCategory} className="bg-violet-500 hover:bg-violet-600 text-white w-full">Add Category</Button>
+                  </div>
+              )}
+            </div>
+            <div className="flex gap-2">
+                <input value={newAptStartTime} onChange={e => setNewAptStartTime(e.target.value)} type="time" className="block w-full px-3 py-1.5 border border-gray-300 rounded-md text-sm"/>
+                <input value={newAptEndTime} onChange={e => setNewAptEndTime(e.target.value)} type="time" className="block w-full px-3 py-1.5 border border-gray-300 rounded-md text-sm"/>
+            </div>
+        </div>
+        <div className="flex justify-end gap-1 mt-2">
+            <Button size="sm" variant="ghost" onClick={() => { setCreationDropdown(null); setEditingAppointmentId(null); setIsCreatingInDropdown(false); }}>Cancel</Button>
+            <Button size="sm" onClick={handleSaveNewAppointment} className="bg-violet-500 hover:bg-violet-600 text-white">Save</Button>
+        </div>
+    </div>
+);
 
 
 export default function DochiCalendar() {
@@ -46,13 +117,17 @@ export default function DochiCalendar() {
   const [selectedDate, setSelectedDate] = useState<string>('2025-06-13')
   const [currentMonth, setCurrentMonth] = useState(5) // June = 5 (0-indexed)
   const [currentYear, setCurrentYear] = useState(2025)
-  const [viewMode, setViewMode] = useState<"Month" | "Week">("Month")
+  const [viewMode, setViewMode] = useState<"Month" | "Week">("Week")
 
   const [currentPage, setCurrentPage] = useState("Calendar")
   const [openDate, setOpenDate] = useState<string | null>(null);
 
-  // State for creating appointment within the dropdown
+  // State for creating/editing appointments
   const [isCreatingInDropdown, setIsCreatingInDropdown] = useState(false);
+  const [editingAppointmentId, setEditingAppointmentId] = useState<number | null>(null);
+  const [creationDropdown, setCreationDropdown] = useState<{ x: number, y: number, date: string, startTime: string } | null>(null);
+  const [eventPopover, setEventPopover] = useState<{ x: number, y: number, appointment: Appointment, date: string } | null>(null);
+
 
   // State for new appointment form
   const [newAptTitle, setNewAptTitle] = useState("");
@@ -64,40 +139,144 @@ export default function DochiCalendar() {
   // State for adding/deleting a new category
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
-  const [newCategoryColor, setNewCategoryColor] = useState(colorPalette[0]);
+  const [newCategoryColor, setNewCategoryColor] = useState("#8B5CF6");
   const [isDeletingCategory, setIsDeletingCategory] = useState(false);
-  const [isColorPaletteOpen, setIsColorPaletteOpen] = useState(false);
-
 
   const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1024)
+  const calendarGridRef = useRef<HTMLDivElement>(null);
+
+  // Reset all temporary states when view or page changes
+  useEffect(() => {
+    setOpenDate(null);
+    setEventPopover(null);
+    setCreationDropdown(null);
+    setIsAddingCategory(false);
+    setIsDeletingCategory(false);
+    setIsCreatingInDropdown(false);
+    setEditingAppointmentId(null);
+  }, [viewMode, currentPage]);
+
 
   const getStartOfWeek = (date: Date) => {
-    const start = new Date(date);
-    start.setDate(date.getDate() - date.getDay());
-    start.setHours(0, 0, 0, 0);
-    return start;
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+    d.setDate(diff);
+    d.setHours(0, 0, 0, 0);
+    // Assuming week starts on Monday, adjust if needed
+    return d;
   }
 
   const initialDate = new Date(selectedDate);
   const [weekViewStartDate, setWeekViewStartDate] = useState(getStartOfWeek(initialDate));
 
-  const [appointments, setAppointments] = useState<{ [date: string]: { id: number; title: string; startTime: string; endTime: string; color: string; category: string }[] }>({
+  const [appointments, setAppointments] = useState<{ [date: string]: Appointment[] }>({
     "2025-06-10": [
-        { id: 1, title: "Team Meeting", startTime: "10:00 A.M.", endTime: "11:00 A.M.", color: "#8B5CF6", category: "Work" },
-        { id: 2, title: "Lunch with Client", startTime: "12:30 P.M.", endTime: "1:30 P.M.", color: "#6B7280", category: "Others" },
+        { id: 1, title: "Product Design Course", startTime: "09:30", endTime: "12:00", color: "#10B981", category: "Personal", completed: false },
+    ],
+    "2025-06-09": [
+        { id: 2, title: "Conversational Interview", startTime: "12:30", endTime: "14:00", color: "#8B5CF6", category: "Work", completed: false },
+    ],
+    "2025-06-11": [
+        { id: 3, title: "Usability testing", startTime: "09:00", endTime: "11:00", color: "#8B5CF6", category: "Work", completed: true },
+        { id: 4, title: "App Design", startTime: "13:00", endTime: "15:30", color: "#10B981", category: "Personal", completed: false },
     ],
     "2025-06-13": [
-        { id: 3, title: "Project Deadline", startTime: "9:00 A.M.", endTime: "10:30 A.M.", color: "#EF4444", category: "Urgent" },
-    ],
-    "2025-06-20": [
-         { id: 4, title: "Appointment 1", startTime: "9.00 A.M.", endTime: "9.30 A.M.", color: "#10B981", category: "Personal" },
-         { id: 5, title: "Appointment 2", startTime: "10.30 A.M.", endTime: "13.00 P.M.", color: "#8B5CF6", category: "Work" },
-         { id: 6, title: "Appointment 3", startTime: "16.00 P.M.", endTime: "17.30 P.M.", color: "#6B7280", category: "Others" },
+         { id: 5, title: "Frontend developement", startTime: "10:00", endTime: "13:00", color: "#3B82F6", category: "Work", completed: false },
     ],
     "2025-07-10": [
-        { id: 7, title: "Dentist Appointment", startTime: "14:00 P.M.", endTime: "15:00 P.M.", color: "#10B981", category: "Personal" },
+        { id: 7, title: "Dentist Appointment", startTime: "2:00 P.M.", endTime: "3:00 P.M.", color: "#10B981", category: "Personal", completed: false },
     ]
   });
+
+  const formatTimeForInput = (time: string) => {
+    if (!time) return "00:00";
+    if (time.includes("A.M.") || time.includes("P.M.")) {
+      let [t, period] = time.split(' ');
+      let [hours, minutes] = t.split(':').map(Number);
+      if (period.toLowerCase().startsWith('p') && hours < 12) hours += 12;
+      if (period.toLowerCase().startsWith('a') && hours === 12) hours = 0;
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    }
+    const [hour, minute] = time.split(':');
+    return `${hour.padStart(2, '0')}:${minute || '00'}`;
+  };
+
+  const handleSaveNewAppointment = () => {
+    const targetDate = creationDropdown?.date || openDate || eventPopover?.date;
+    if (!newAptTitle || !targetDate) return;
+  
+    const categoryDetails = appointmentCategories.find(c => c.name === newAptCategory);
+  
+    const formatTime12hr = (time: string) => {
+      let [hours, minutes] = time.split(':').map(Number);
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    };
+  
+    if (editingAppointmentId) {
+      // Update existing appointment
+      setAppointments(prev => {
+        const newState = { ...prev };
+        const dayAppointments = newState[targetDate] || [];
+        const updatedAppointments = dayAppointments.map(apt => {
+          if (apt.id === editingAppointmentId) {
+            return {
+              ...apt,
+              title: newAptTitle,
+              startTime: formatTime12hr(newAptStartTime),
+              endTime: formatTime12hr(newAptEndTime),
+              category: newAptCategory,
+              color: categoryDetails?.color || '#6B7280',
+            };
+          }
+          return apt;
+        }).sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
+        newState[targetDate] = updatedAppointments;
+        return newState;
+      });
+    } else {
+      // Create new appointment
+      const newAppointment: Appointment = {
+        id: Date.now(),
+        title: newAptTitle,
+        startTime: formatTime12hr(newAptStartTime),
+        endTime: formatTime12hr(newAptEndTime),
+        category: newAptCategory,
+        color: categoryDetails?.color || '#6B7280',
+        completed: false,
+      };
+  
+      setAppointments(prev => {
+        const updated = { ...prev };
+        const dayApts = updated[targetDate] ? [...updated[targetDate], newAppointment] : [newAppointment];
+        updated[targetDate] = dayApts.sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
+        return updated;
+      });
+    }
+  
+    // Reset form and close dropdowns/popovers
+    setIsCreatingInDropdown(false);
+    setCreationDropdown(null);
+    setEventPopover(null);
+    setEditingAppointmentId(null);
+    setNewAptTitle("");
+    setNewAptCategory(appointmentCategories[0].name);
+  };
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as HTMLElement;
+      if (creationDropdown && !target.closest('.creation-dropdown')) {
+        setCreationDropdown(null);
+      }
+      if (eventPopover && !target.closest('.event-popover')) {
+        setEventPopover(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [creationDropdown, eventPopover]);
+
 
     const handleDeleteAppointment = (e: React.MouseEvent, dateStr: string, appointmentId: number) => {
         e.stopPropagation();
@@ -110,48 +289,31 @@ export default function DochiCalendar() {
 
             if (updatedAppointments.length === 0) {
                 delete newAppointmentsState[dateStr];
-                setOpenDate(null);
             } else {
                 newAppointmentsState[dateStr] = updatedAppointments;
             }
+            setOpenDate(null);
+            setEventPopover(null);
             return newAppointmentsState;
         });
     };
 
-    const handleSaveNewAppointment = () => {
-        if (!newAptTitle || !openDate) return;
+    const handleEditAppointment = (apt: Appointment, date: string) => {
+      setEditingAppointmentId(apt.id);
+      setNewAptTitle(apt.title);
+      setNewAptCategory(apt.category);
+      setNewAptStartTime(formatTimeForInput(apt.startTime));
+      setNewAptEndTime(formatTimeForInput(apt.endTime));
+      
+      setIsCreatingInDropdown(true);
 
-        const newId = Date.now();
-        const categoryDetails = appointmentCategories.find(c => c.name === newAptCategory);
-
-        const formatTime = (time: string) => {
-            let [hours, minutes] = time.split(':').map(Number);
-            const ampm = hours >= 12 ? 'P.M.' : 'A.M.';
-            hours = hours % 12 || 12;
-            return `${hours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
-        };
-
-        const newAppointment = {
-            id: newId,
-            title: newAptTitle,
-            startTime: formatTime(newAptStartTime),
-            endTime: formatTime(newAptEndTime),
-            category: newAptCategory,
-            color: categoryDetails?.color || '#6B7280',
-        };
-
-        setAppointments(prev => {
-            const updated = { ...prev };
-            const dayApts = updated[openDate] ? [...updated[openDate], newAppointment] : [newAppointment];
-            updated[openDate] = dayApts;
-            return updated;
-        });
-
-        setIsCreatingInDropdown(false);
-        setNewAptTitle("");
-        setNewAptCategory(appointmentCategories[0].name);
+      if (viewMode === 'Week' && eventPopover) {
+          const popoverPosition = { x: eventPopover.x, y: eventPopover.y };
+          setCreationDropdown({ ...popoverPosition, date: date, startTime: apt.startTime });
+          setEventPopover(null);
+      }
     };
-
+    
     const handleAddNewCategory = () => {
         if(!newCategoryName) return;
 
@@ -164,7 +326,6 @@ export default function DochiCalendar() {
         setNewAptCategory(newCategory.name);
         setNewCategoryName("");
         setIsAddingCategory(false);
-        setIsColorPaletteOpen(false);
     };
 
     const handleDeleteCategory = (categoryNameToDelete: string) => {
@@ -177,7 +338,7 @@ export default function DochiCalendar() {
         setIsAddingCategory(false);
     }
 
-  const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+  const daysOfWeek = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
   const daysOfWeekShort = ["S", "M", "T", "W", "T", "F", "S"]
   const monthNames = [
     "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December",
@@ -205,19 +366,21 @@ export default function DochiCalendar() {
   const miniCalendarDays = useMemo(() => getDaysInMonth(currentMonth, currentYear), [currentMonth, currentYear]);
 
   const timeToMinutes = (timeStr: string) => {
-    if (!timeStr) return 0;
-    const [time, period] = timeStr.split(' ');
-    let [hours, minutes] = time.split('.').map(Number);
-    if(time.includes(':')) [hours, minutes] = time.split(':').map(Number);
-
-    if (period === 'P.M.' && hours !== 12) {
-      hours += 12;
-    }
-    if (period === 'A.M.' && hours === 12) {
-      hours = 0;
-    }
-    return hours * 60 + (minutes || 0);
+      if (!timeStr) return 0;
+      const timeLower = timeStr.toLowerCase();
+      
+      if (timeLower.includes('a.m.') || timeLower.includes('p.m.')) {
+          let [time, period] = timeLower.split(' ');
+          let [hours, minutes] = time.split(':').map(Number);
+          if (period.startsWith('p') && hours !== 12) hours += 12;
+          if (period.startsWith('a') && hours === 12) hours = 0;
+          return hours * 60 + (minutes || 0);
+      }
+      
+      let [hours, minutes] = timeStr.split(':').map(Number);
+      return hours * 60 + (minutes || 0);
   };
+  
 
   const sortedEventsForSelectedDate = useMemo(() => {
     return [...(appointments[selectedDate] || [])].sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
@@ -252,12 +415,17 @@ export default function DochiCalendar() {
 
     const newDate = new Date(targetYear, targetMonth, day);
     setWeekViewStartDate(getStartOfWeek(newDate));
-    setIsCreatingInDropdown(false);
 
     if (isMiniCalendar) {
-      setOpenDate(null);
+        setOpenDate(null);
+        setEventPopover(null);
     } else {
-      setOpenDate(openDate === dateStr ? null : dateStr);
+        if (openDate === dateStr) {
+            setOpenDate(null);
+        } else {
+            setEventPopover(null);
+            setOpenDate(dateStr);
+        }
     }
   };
 
@@ -273,12 +441,15 @@ export default function DochiCalendar() {
     setCurrentMonth(newMonth);
     setCurrentYear(newYear);
     setOpenDate(null);
+    setCreationDropdown(null);
   }
 
   const navigateWeek = (direction: "prev" | "next") => {
     const newWeekStart = new Date(weekViewStartDate);
     newWeekStart.setDate(newWeekStart.getDate() + (direction === 'next' ? 7 : -7));
     setWeekViewStartDate(newWeekStart);
+    setCreationDropdown(null);
+    setEventPopover(null);
   }
 
   const weekDays = useMemo(() => {
@@ -291,15 +462,132 @@ export default function DochiCalendar() {
     return week;
   }, [weekViewStartDate]);
 
+  const newWeekRangeString = useMemo(() => {
+    const startDate = weekDays[0];
+    const endDate = weekDays[6];
+    const startMonth = monthNames[startDate.getMonth()];
+    
+    return `${startMonth} ${startDate.getDate()} - ${endDate.getDate()}, ${endDate.getFullYear()}`;
+  }, [weekDays]);
+
+  const getWeekNumber = (d: Date) => {
+    d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((d.valueOf() - yearStart.valueOf()) / 86400000) + 1) / 7);
+    return weekNo;
+  };
+
   const handleNavClick = (page: string) => {
     setActiveSection(page);
     setCurrentPage(page);
-    if (windowWidth < 1024) {
-    }
   }
 
   const [selectedYear, selectedMonth, selectedDayNum] = selectedDate.split('-').map(Number);
 
+  const hexToRgba = (hex: string, opacity: number) => {
+    if (!hex || hex.length < 4) return 'rgba(107, 114, 128, 0.2)'; // default gray
+    let r = parseInt(hex.slice(1, 3), 16);
+    let g = parseInt(hex.slice(3, 5), 16);
+    let b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  };
+
+  const handleGridClick = (e: React.MouseEvent, dayDateStr: string) => {
+    if ((e.target as HTMLElement).closest('.event-block')) {
+        return;
+    }
+
+    const grid = calendarGridRef.current;
+    if (!grid) return;
+
+    // Calculate hour based on the vertical click position
+    const gridRect = grid.getBoundingClientRect();
+    const relativeY = e.clientY - gridRect.top;
+    const hour = Math.floor(relativeY / (gridRect.height / 24));
+    
+    // Set form defaults
+    setNewAptTitle('');
+    setEditingAppointmentId(null);
+    setNewAptStartTime(formatTimeForInput(`${hour}:00`));
+    setNewAptEndTime(formatTimeForInput(`${hour + 1}:00`));
+
+    // Position popover next to cursor, with boundary checks
+    const popupWidth = 300;
+    let popupX = e.clientX + 15;
+    if (popupX + popupWidth > window.innerWidth) {
+        popupX = e.clientX - popupWidth - 15;
+    }
+
+    setIsCreatingInDropdown(true);
+    setCreationDropdown({
+        x: popupX,
+        y: e.clientY,
+        date: dayDateStr,
+        startTime: formatTimeForInput(`${hour}:00`),
+    });
+  };
+
+  const handleEventClick = (e: React.MouseEvent<HTMLDivElement>, apt: Appointment, date: string) => {
+    e.stopPropagation();
+    const eventRect = e.currentTarget.getBoundingClientRect();
+    
+    const top = eventRect.top + (eventRect.height / 2);
+    const left = eventRect.right;
+    
+    setOpenDate(null);
+    setCreationDropdown(null);
+    setEventPopover({
+        x: left + 5,
+        y: top,
+        appointment: apt,
+        date: date,
+    });
+  };
+
+  const AppointmentListPopover = ({date}) => {
+      const dayAppointments = appointments[date] || [];
+      const creationFormProps = {
+        newAptTitle, setNewAptTitle, appointmentCategories, newAptCategory, setNewAptCategory,
+        isDeletingCategory, handleDeleteCategory, isAddingCategory, setIsAddingCategory,
+        toggleDeleteMode, newCategoryName, setNewCategoryName, newCategoryColor, setNewCategoryColor,
+        handleAddNewCategory, newAptStartTime, setNewAptStartTime, newAptEndTime, setNewAptEndTime,
+        handleSaveNewAppointment, setCreationDropdown, setEditingAppointmentId, setIsCreatingInDropdown, editingAppointmentId
+      };
+
+      return (
+          <div className="p-2.5">
+              <div className="flex justify-between items-center mb-2 px-2">
+                  <h4 className="text-sm font-bold">{isCreatingInDropdown ? (editingAppointmentId ? 'Edit Appointment' : 'New Appointment') : 'Appointments'}</h4>
+                  {isCreatingInDropdown ? (
+                      <button onClick={() => setIsCreatingInDropdown(false)} className="p-1 rounded-full hover:bg-red-100 text-red-500">
+                          <X className="w-4 h-4"/>
+                      </button>
+                  ) : (
+                      <button onClick={() => { setEditingAppointmentId(null); setNewAptTitle(''); setIsCreatingInDropdown(true); }} className="text-purple-600 hover:text-purple-800">
+                          <PlusCircle className="w-4 h-4" />
+                      </button>
+                  )}
+              </div>
+              {isCreatingInDropdown ? <CreationForm {...creationFormProps} /> : (
+                <ul className="space-y-1">
+                    {dayAppointments.length > 0 ? dayAppointments.map(apt => (
+                        <li key={apt.id} className="flex items-center space-x-2 p-1.5 rounded-md hover:bg-gray-50 group">
+                            <div style={{backgroundColor: apt.color}} className={`w-2 h-2 rounded-full flex-shrink-0`}></div>
+                            <span className="text-xs font-semibold text-gray-800 flex-1 truncate">{apt.title}</span>
+                            <span className="text-xs text-gray-400 ml-auto">{apt.startTime}</span>
+                            <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button onClick={() => handleEditAppointment(apt, date)} className="text-gray-400 hover:text-blue-500 p-1"><Edit2 className="w-3.5 h-3.5"/></button>
+                              <button onClick={(e) => handleDeleteAppointment(e, date, apt.id)} className="text-gray-400 hover:text-red-500 p-1"><Trash2 className="w-3.5 h-3.5"/></button>
+                            </div>
+                        </li>
+                    )) : <li className="text-xs text-center text-gray-400 py-2">No events. Add one!</li>}
+                </ul>
+              )}
+            </div>
+      )
+  }
+  
   return (
     <div className="flex h-screen bg-white overflow-hidden font-sans">
         <style>{`
@@ -315,6 +603,19 @@ export default function DochiCalendar() {
             }
             .animate-dropdown {
                 animation: slide-down 0.2s ease-out forwards;
+            }
+            input[type="color"] {
+              -webkit-appearance: none;
+              border: none;
+              width: 24px;
+              height: 24px;
+            }
+            input[type="color"]::-webkit-color-swatch-wrapper {
+              padding: 0;
+            }
+            input[type="color"]::-webkit-color-swatch {
+              border: 1px solid #d1d5db;
+              border-radius: 0.375rem;
             }
         `}</style>
 
@@ -355,21 +656,20 @@ export default function DochiCalendar() {
                       }
                       const cellDateStr = `${cellYear}-${String(cellMonth + 1).padStart(2, '0')}-${String(dayObj.day).padStart(2, '0')}`;
                       const isSelected = selectedDate === cellDateStr;
+                      const dayAppointments = appointments[cellDateStr];
+                      const firstUpcomingAppointment = dayAppointments?.find(apt => !apt.completed) || dayAppointments?.[0];
 
                       return (
                         <div
                           key={index}
-                          className="h-8 flex items-center justify-center text-xs cursor-pointer"
+                          className="h-10 flex items-center justify-center text-xs cursor-pointer"
                           onClick={() => handleDateClick(dayObj.day, dayObj.isCurrentMonth, dayObj.isPrevMonth, dayObj.isNextMonth, true)}
                         >
-                          <div
-                            className={`w-7 h-7 flex items-center justify-center rounded-full transition-colors duration-200
-                              ${isSelected
-                                ? "bg-[#FFD4F2] text-purple-700 font-semibold"
-                                : dayObj.isCurrentMonth ? "text-gray-600 hover:bg-gray-100" : "text-gray-300"
-                              }`}
-                          >
-                            {dayObj.day}
+                          <div className={`w-7 h-7 flex flex-col items-center justify-center rounded-md transition-colors duration-200 relative ${isSelected ? "text-purple-700 font-semibold" : dayObj.isCurrentMonth ? "text-gray-600 hover:bg-gray-100" : "text-gray-300" }`}>
+                            <span>{dayObj.day}</span>
+                            {firstUpcomingAppointment && (
+                              <div className="w-1.5 h-1.5 rounded-full absolute bottom-[-2px]" style={{ backgroundColor: firstUpcomingAppointment.color }}></div>
+                            )}
                           </div>
                         </div>
                       )
@@ -396,7 +696,7 @@ export default function DochiCalendar() {
                                             <div style={{ backgroundColor: appointment.color }} className="w-full h-full rounded-full"></div>
                                         </div>
                                         <div className="pl-6">
-                                        <p className="text-sm font-semibold text-gray-800">{appointment.title}</p>
+                                        <p className={`text-sm font-semibold text-gray-800 ${appointment.completed ? 'line-through' : ''}`}>{appointment.title}</p>
                                         <p className="text-xs text-gray-400">{appointment.startTime} – {appointment.endTime}</p>
                                         </div>
                                     </div>
@@ -413,48 +713,41 @@ export default function DochiCalendar() {
 
               {/* Main Calendar View */}
               <div className="flex-1 min-w-0">
-                <div className="bg-white rounded-lg border border-black/10 h-full flex flex-col">
-                  <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
-                    <div className="flex items-center space-x-1 bg-gray-100 rounded-full p-1">
-                      <Button
-                        variant='ghost'
-                        size="sm"
-                        onClick={() => setViewMode("Month")}
-                        className={`rounded-full px-4 py-1 text-xs font-semibold transition-none ${viewMode === 'Month' ? 'bg-white text-gray-800' : 'text-gray-500 hover:bg-gray-200'}`}
-                      >
-                        Month
-                      </Button>
-                      <Button
-                        variant='ghost'
-                        size="sm"
-                        onClick={() => setViewMode("Week")}
-                        className={`rounded-full px-4 py-1 text-xs font-semibold transition-none ${viewMode === 'Week' ? 'bg-white text-gray-800' : 'text-gray-500 hover:bg-gray-200'}`}
-                      >
-                        Week
-                      </Button>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                        {viewMode === 'Week' && (
-                             <div className="flex items-center space-x-2">
-                                <button onClick={() => navigateWeek("prev")} className="p-1 rounded hover:bg-gray-100">
-                                <ChevronLeft className="w-5 h-5 text-gray-500" />
-                                </button>
-                                <button onClick={() => navigateWeek("next")} className="p-1 rounded hover:bg-gray-100">
-                                <ChevronRight className="w-5 h-5 text-gray-500" />
-                                </button>
-                            </div>
-                        )}
-                        <div className="text-lg font-semibold text-gray-800 mr-4">{viewMode === 'Week' ? `${monthNames[weekViewStartDate.getMonth()]} ${weekViewStartDate.getFullYear()}`: currentYear}</div>
-                    </div>
+                <div className="bg-white rounded-xl border border-black/10 h-full flex flex-col">
+                  {/* DYNAMIC HEADER */}
+                  <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200 flex-shrink-0">
+                      <div className="flex items-center space-x-1 bg-gray-100 rounded-full p-1">
+                          <Button variant='ghost' size="sm" onClick={() => setViewMode("Month")} className={`rounded-full px-4 py-1 text-xs font-semibold transition-none ${viewMode === 'Month' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
+                              Month
+                          </Button>
+                          <Button variant='ghost' size="sm" onClick={() => setViewMode("Week")} className={`rounded-full px-4 py-1 text-xs font-semibold transition-none ${viewMode === 'Week' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
+                              Week
+                          </Button>
+                      </div>
+
+                      {viewMode === 'Week' ? (
+                          <div className="flex items-center space-x-2 sm:space-x-4">
+                              <div className="flex items-center space-x-1">
+                                  <button onClick={() => navigateWeek("prev")} className="p-2 rounded-full hover:bg-gray-100"><ChevronLeft className="w-5 h-5 text-gray-500" /></button>
+                                  <button onClick={() => navigateWeek("next")} className="p-2 rounded-full hover:bg-gray-100"><ChevronRight className="w-5 h-5 text-gray-500" /></button>
+                              </div>
+                              <h2 className="text-base sm:text-lg font-semibold text-gray-700 hidden md:block">{newWeekRangeString}</h2>
+                              <span className="bg-gray-100 text-gray-500 text-xs font-semibold px-2 py-1 rounded-md hidden lg:block">Week {getWeekNumber(weekDays[0])}</span>
+                          </div>
+                      ) : (
+                           <div className="flex items-center space-x-4">
+                               <div className="flex items-center space-x-2">
+                                  <button onClick={() => navigateMonth("prev")} className="p-1 rounded-full hover:bg-gray-100"><ChevronLeft className="w-5 h-5 text-gray-500" /></button>
+                                  <button onClick={() => navigateMonth("next")} className="p-1 rounded-full hover:bg-gray-100"><ChevronRight className="w-5 h-5 text-gray-500" /></button>
+                              </div>
+                              <div className="text-lg font-semibold text-gray-800">{monthNames[currentMonth]} {currentYear}</div>
+                          </div>
+                      )}
                   </div>
 
                   {viewMode === "Month" ? (
                     <div className="flex-1 grid grid-cols-7" style={{ gridTemplateRows: 'auto repeat(6, 1fr)' }}>
-                      {daysOfWeek.map((day) => (
-                        <div key={day} className="p-4 text-center border-b border-r border-gray-200">
-                          <p className="font-semibold text-gray-600 text-sm">{day}</p>
-                        </div>
-                      ))}
+                      {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((day) => (<div key={day} className="p-4 text-center border-b border-r border-gray-200"><p className="font-semibold text-gray-600 text-sm">{day}</p></div>))}
                       {calendarDays.map((dayObj, index) => {
                         let cellMonth = currentMonth;
                         let cellYear = currentYear;
@@ -466,166 +759,91 @@ export default function DochiCalendar() {
                             cellYear = currentMonth === 11 ? currentYear + 1 : currentYear;
                         }
                         const cellDateStr = `${cellYear}-${String(cellMonth + 1).padStart(2, '0')}-${String(dayObj.day).padStart(2, '0')}`;
-
-                        const dayAppointments = appointments[cellDateStr] ? [...appointments[cellDateStr]].sort((a,b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime)) : [];
                         const isDropdownOpen = openDate === cellDateStr;
                         const isSelected = selectedDate === cellDateStr;
                         const positionClassX = index % 7 > 3 ? 'right-0' : 'left-0';
-                        const positionClassY = index >= 28 ? 'bottom-full mb-2' : 'top-full mt-2';
+                        const positionClassY = index >= 28 ? 'bottom-12' : 'top-12';
 
                         return (
-                          <div
-                            key={index}
-                            className="p-2 border-b border-r border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors relative"
-                            onClick={() => handleDateClick(dayObj.day, dayObj.isCurrentMonth, dayObj.isPrevMonth, dayObj.isNextMonth, false)}
-                          >
+                          <div key={cellDateStr} className="p-2 border-b border-r border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors relative" onClick={() => handleDateClick(dayObj.day, dayObj.isCurrentMonth, dayObj.isPrevMonth, dayObj.isNextMonth, false)}>
                             <div className="flex flex-col h-full">
-                                <p className={`w-7 h-7 flex items-center justify-center text-sm font-medium rounded-full self-start
-                                 ${isSelected
-                                    ? "bg-[#FFD4F2] text-purple-700"
-                                    : dayObj.isCurrentMonth ? "text-gray-700" : "text-gray-300"
-                                  }`}>
-                                {dayObj.day}
-                              </p>
-
-                              {dayObj.isCurrentMonth && dayAppointments.length > 0 && !isDropdownOpen && (
-                                <div className="flex items-center space-x-1 mt-1">
-                                  {dayAppointments.slice(0, 3).map(apt => (
-                                     <div key={apt.id} style={{backgroundColor: apt.color}} className={`w-1.5 h-1.5 rounded-full`}></div>
-                                  ))}
-                                </div>
-                              )}
-
+                                <p className={`w-7 h-7 flex items-center justify-center text-sm font-medium rounded-full self-start ${isSelected ? "bg-[#FFD4F2] text-purple-700" : dayObj.isCurrentMonth ? "text-gray-700" : "text-gray-300"}`}>{dayObj.day}</p>
+                                {dayObj.isCurrentMonth && (appointments[cellDateStr] || []).length > 0 && !isDropdownOpen && (<div className="flex items-center space-x-1 mt-1">{(appointments[cellDateStr] || []).slice(0, 3).map(apt => (<div key={apt.id} style={{backgroundColor: apt.color}} className={`w-1.5 h-1.5 rounded-full`}></div>))}</div>)}
+                            </div>
                             {isDropdownOpen && (
-                                <div className={`absolute ${positionClassX} ${positionClassY} w-[300px] bg-white backdrop-blur-md shadow-xl rounded-lg border border-black/5 z-20 animate-dropdown`} onClick={e => e.stopPropagation()}>
-                                    {isCreatingInDropdown ? (
-                                        <div className="p-3">
-                                            <p className="text-sm font-bold p-1 mb-2">New Appointment</p>
-                                            <div className="space-y-3 p-1">
-                                                <input value={newAptTitle} onChange={(e) => setNewAptTitle(e.target.value)} type="text" placeholder="Appointment Name" className="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-pink-500 focus:border-pink-500 text-sm"/>
-                                                <div>
-                                                    <div className="flex flex-wrap gap-2 items-center">
-                                                        {appointmentCategories.map(cat => (
-                                                            <button key={cat.name} onClick={() => isDeletingCategory ? handleDeleteCategory(cat.name) : setNewAptCategory(cat.name)} className={`px-3 py-1 text-xs rounded-full transition-all relative group ${newAptCategory === cat.name && !isDeletingCategory ? `font-semibold shadow-md` : 'bg-white text-gray-700 hover:bg-gray-100 border'}`} style={newAptCategory === cat.name && !isDeletingCategory ? {backgroundColor: cat.color, color: 'white'} : {}}>
-                                                                {cat.name}
-                                                                {isDeletingCategory && <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">&times;</div>}
-                                                            </button>
-                                                        ))}
-                                                        <button onClick={() => { setIsAddingCategory(!isAddingCategory); setIsDeletingCategory(false); setIsColorPaletteOpen(false); }} className="w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-600">+</button>
-                                                        <button onClick={toggleDeleteMode} className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${isDeletingCategory ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'}`}><Trash2 className="w-3.5 h-3.5"/></button>
-                                                    </div>
-                                                    {isAddingCategory && (
-                                                        <div className="p-2 mt-2 space-y-3 border-t border-pink-100 relative">
-                                                            <input value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} type="text" placeholder="New Category Name" className="block w-full px-3 py-1 bg-white border border-gray-300 rounded-md text-xs"/>
-                                                            <div className="flex items-center gap-2">
-                                                                <button onClick={() => setIsColorPaletteOpen(!isColorPaletteOpen)} style={{backgroundColor: newCategoryColor}} className="w-6 h-6 rounded-full border-2 border-white shadow"></button>
-                                                                <Button size="sm" onClick={handleAddNewCategory} className="bg-[#FFD4F2] hover:bg-[#FFD4F2]/90 text-purple-6    00">Add Category</Button>
-                                                            </div>
-                                                            {isColorPaletteOpen && (
-                                                                <div className="p-2 rounded-md bg-white shadow-md border absolute z-10 flex flex-wrap gap-2">
-                                                                    {colorPalette.map(color => (
-                                                                        <button key={color} onClick={() => setNewCategoryColor(color)} style={{backgroundColor: color}} className={`w-6 h-6 rounded-full border-2 ${newCategoryColor === color ? 'border-blue-500' : 'border-transparent'}`}></button>
-                                                                    ))}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div className="flex gap-2">
-                                                    <input value={newAptStartTime} onChange={e => setNewAptStartTime(e.target.value)} type="time" className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm"/>
-                                                    <input value={newAptEndTime} onChange={e => setNewAptEndTime(e.target.value)} type="time" className="block w-full px-3 py-2 border border-gray-300 rounded-md text-sm"/>
-                                                </div>
-                                            </div>
-                                            <div className="flex justify-end gap-1 mt-3">
-                                                <Button size="sm" variant="ghost" onClick={() => setIsCreatingInDropdown(false)}>Cancel</Button>
-                                                <Button size="sm" onClick={handleSaveNewAppointment} className="bg-pink-500 hover:bg-pink-600 text-white">Save</Button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                      <div className="p-2">
-                                        <div className="flex justify-between items-center mb-2 px-1">
-                                            <h4 className="text-xs font-bold">Appointments</h4>
-                                            <button onClick={() => setIsCreatingInDropdown(true)} className="text-purple-600 hover:text-purple-800">
-                                                <PlusCircle className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                        <ul className="space-y-1">
-                                            {dayAppointments.length > 0 ? dayAppointments.map(apt => (
-                                                <li key={apt.id} className="flex items-center space-x-2 p-1.5 rounded-md hover:bg-white/50 group">
-                                                    <div style={{backgroundColor: apt.color}} className={`w-2 h-2 rounded-full flex-shrink-0`}></div>
-                                                    <span className="text-xs font-semibold text-gray-800 flex-1 truncate">{apt.title}</span>
-                                                    <span className="text-xs text-gray-400 ml-auto">{apt.startTime}</span>
-                                                    <button onClick={(e) => handleDeleteAppointment(e, cellDateStr, apt.id)} className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <Trash2 className="w-3.5 h-3.5"/>
-                                                    </button>
-                                                </li>
-                                            )) : <li className="text-xs text-center text-gray-400 py-2">No events. Add one!</li>}
-                                        </ul>
-                                      </div>
-                                    )}
+                                <div className={`creation-dropdown absolute ${positionClassX} ${positionClassY} w-[300px] bg-white backdrop-blur-md shadow-xl rounded-lg border border-black/5 z-20 animate-dropdown`} onClick={e => e.stopPropagation()}>
+                                  <AppointmentListPopover date={cellDateStr} />
                                 </div>
                             )}
-                            </div>
                           </div>
                         )
                       })}
                     </div>
-                  ) : ( // Week View
-                    <div className="flex-1 flex flex-col overflow-auto">
-                       <div className="grid grid-cols-8 flex-shrink-0">
-                          <div className="p-4 border-b border-r border-gray-200"></div>
-                          {weekDays.map((date, index) => {
-                             const cellDateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-                             const isSelected = selectedDate === cellDateStr;
-                             return (
-                                <div key={index} className="p-4 text-center border-b border-r border-gray-200">
-                                   <p className="text-xs text-gray-500">{daysOfWeek[date.getDay()].substring(0,3).toUpperCase()}</p>
-                                   <p className={`font-semibold text-lg ${isSelected ? 'text-purple-600' : 'text-gray-700'}`}>{date.getDate()}</p>
-                                </div>
-                             )
-                          })}
-                       </div>
-                       <div className="flex-1 grid grid-cols-8 relative">
-                          {/* Hour Lines */}
-                          <div className="col-span-1">
-                            {Array.from({ length: 24 }, (_, hour) => (
-                               <div key={hour} className="h-16 border-r border-b border-gray-200 flex justify-end items-start p-1">
-                                  <p className="text-xs text-gray-400 -mt-2">{hour > 0 ? `${hour % 12 === 0 ? 12 : hour % 12} ${hour < 12 ? 'AM' : 'PM'}` : ''}</p>
-                               </div>
-                            ))}
-                          </div>
-                          {/* Day Columns */}
-                          {weekDays.map((day, dayIndex) => {
-                            const dayDateStr = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
-                            const dayAppointments = appointments[dayDateStr] || [];
-                            return (
-                                <div key={dayIndex} className="col-span-1 border-r relative">
-                                    {/* Hour cells for grid lines */}
-                                    {Array.from({ length: 24 }).map((_, hourIndex) => (
-                                        <div key={hourIndex} className="h-16 border-b border-gray-200"></div>
-                                    ))}
-                                    {/* Appointments */}
-                                    {dayAppointments.map(apt => {
-                                        const startMinutes = timeToMinutes(apt.startTime);
-                                        const endMinutes = apt.endTime ? timeToMinutes(apt.endTime) : startMinutes + 60;
-                                        const durationMinutes = Math.max(30, endMinutes - startMinutes);
-
-                                        const top = (startMinutes / (24*60)) * 100;
-                                        const height = (durationMinutes / (24*60)) * 100;
-
-                                        return (
-                                            <div key={apt.id}
-                                                 style={{ top: `${top}%`, height: `${height}%`, minHeight: '20px', backgroundColor: apt.color }}
-                                                 className={`absolute left-2 right-2 p-2 rounded-lg text-white flex flex-col justify-center`}>
-                                                <p className="text-xs font-bold truncate">{apt.title}</p>
-                                                <p className="text-xs truncate">{apt.startTime} - {apt.endTime}</p>
-                                            </div>
-                                        )
-                                    })}
-                                </div>
-                            )
-                          })}
-                       </div>
+                  ) : ( // NEW WEEK VIEW
+                    <div className="flex-1 flex flex-col overflow-auto" ref={calendarGridRef}>
+                        <div className="grid grid-cols-[auto_1fr] flex-shrink-0 sticky top-0 bg-white z-10 border-b border-gray-200">
+                            <div className="w-16"></div>
+                            <div className="grid grid-cols-7">
+                                {weekDays.map((day) => {
+                                    const today = new Date();
+                                    const isToday = day.getFullYear() === today.getFullYear() && day.getMonth() === today.getMonth() && day.getDate() === today.getDate();
+                                    return (
+                                        <div key={day.toISOString()} className="py-3 text-center border-r border-gray-200">
+                                            <p className="text-xs text-gray-400 font-medium">{daysOfWeek[day.getDay()]}</p>
+                                            <p className={`text-2xl mt-1 font-bold ${isToday ? 'text-indigo-600' : 'text-gray-700'}`}>{day.getDate()}</p>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                        <div className="flex-1 grid grid-cols-[auto_1fr] relative">
+                            <div className="w-16">
+                                {Array.from({ length: 24 }, (_, hour) => (
+                                    <div key={hour} className="h-16 border-r border-gray-200 relative">
+                                        <p className="text-xs text-gray-400 absolute -top-2 left-4">
+                                            {hour > 0 ? `${String(hour).padStart(2, '0')}:00` : ''}
+                                        </p>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="grid grid-cols-7 col-span-1">
+                                {weekDays.map((day) => {
+                                    const dayDateStr = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
+                                    const dayAppointments = (appointments[dayDateStr] || []).sort((a,b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
+                                    return (
+                                        <div key={day.toISOString()} className="col-span-1 border-r border-gray-200 relative cursor-pointer" onClick={(e) => handleGridClick(e, dayDateStr)}>
+                                            {Array.from({ length: 24 }).map((_, hourIndex) => (
+                                                <div key={hourIndex} className="h-16 border-b border-gray-200"></div>
+                                            ))}
+                                            {dayAppointments.map(apt => {
+                                                const startMinutes = timeToMinutes(apt.startTime);
+                                                const endMinutes = apt.endTime ? timeToMinutes(apt.endTime) : startMinutes + 60;
+                                                const durationMinutes = Math.max(30, endMinutes - startMinutes);
+                                                const top = (startMinutes / (24 * 60)) * 100;
+                                                const height = (durationMinutes / (24 * 60)) * 100;
+                                                
+                                                return (
+                                                    <div 
+                                                        key={apt.id} 
+                                                        onClick={(e) => handleEventClick(e, apt, dayDateStr)} 
+                                                        style={{ 
+                                                            top: `${top}%`, 
+                                                            height: `${height}%`, 
+                                                            backgroundColor: hexToRgba(apt.color, 0.2),
+                                                            borderColor: apt.color
+                                                        }} 
+                                                        className={`event-block absolute left-2 right-2 p-2 rounded-md border-l-4 flex flex-col justify-center overflow-hidden`}
+                                                    >
+                                                        <p className="text-sm font-bold text-gray-800 truncate">{apt.title}</p>
+                                                        <p className="text-xs text-gray-500 truncate">{apt.startTime} - {apt.endTime}</p>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </div>
                     </div>
                   )}
                 </div>
@@ -633,6 +851,19 @@ export default function DochiCalendar() {
             </div>
           ) : (
             <PageContent title={currentPage} />
+          )}
+
+          {/* Popovers for Week View are now fixed to the viewport */}
+          {creationDropdown && (
+            <div className="creation-dropdown fixed w-[300px] bg-white backdrop-blur-md shadow-xl rounded-lg border border-black/5 z-20 animate-dropdown transform -translate-y-1/2" style={{ top: creationDropdown.y, left: creationDropdown.x }}>
+                  <AppointmentListPopover date={creationDropdown.date} />
+            </div>
+          )}
+
+          {eventPopover && (
+              <div className="event-popover fixed w-[300px] bg-white backdrop-blur-md shadow-xl rounded-lg border border-black/5 z-20 animate-dropdown transform -translate-y-1/2" style={{ top: eventPopover.y, left: eventPopover.x }}>
+                <AppointmentListPopover date={eventPopover.date} />
+              </div>
           )}
         </div>
       </main>
