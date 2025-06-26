@@ -1,9 +1,27 @@
 import Header from "./header";
 import Dochi from "./dochi";
-import { Link, CheckCheck, TrendingUp } from 'lucide-react';
-import React, { useState } from "react";
+import { Link, CheckCheck, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useState, useMemo } from "react";
 
-const AnalyticsChart = ({ data, title }) => {
+// --- Helper Functions for Date Manipulations ---
+
+// Gets the start of the week (Monday) for a given date
+const getStartOfWeek = (date: Date) => {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+    return new Date(d.setDate(diff));
+};
+
+// Gets the end of the week (Sunday) for a given date
+const getEndOfWeek = (date: Date) => {
+    const d = getStartOfWeek(date);
+    d.setDate(d.getDate() + 6);
+    return d;
+};
+
+
+const AnalyticsChart = ({ data }) => {
   const maxValue = Math.ceil(Math.max(...data.map(p => p.value), 0) * 1.2) || 5;
 
   const svgHeight = 220;
@@ -38,7 +56,6 @@ const AnalyticsChart = ({ data, title }) => {
 
   return (
     <div className="relative h-full flex flex-col">
-       <h4 className="text-sm font-semibold text-gray-600 text-center mb-2">{title}</h4>
       <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-full">
         {yAxisTicks.map((tick, i) => {
           const y = chartHeight - (tick / Math.max(...yAxisTicks, 1)) * chartHeight + paddingTop;
@@ -72,17 +89,17 @@ const AnalyticsChart = ({ data, title }) => {
 
 const StatusCard = ({ icon: Icon, value, title, subtitle, percentage, color: fixedColor }) => {
     const getColorsForPercentage = (p) => {
-        if (p <= 30) return { bg: '#FEF2F2', iconBg: '#FEE2E2', icon: '#EF4444', text: '#991B1B', subtext: '#B91C1C' }; // Red
-        if (p <= 70) return { bg: '#FFFBEB', iconBg: '#FEF3C7', icon: '#F59E0B', text: '#92400E', subtext: '#B45309' }; // Yellow
-        return { bg: '#F0FFF4', iconBg: '#D1FAE5', icon: '#10B981', text: '#065F46', subtext: '#047857' }; // Green
+        if (p <= 30) return { bg: '#FEF2F2', iconBg: '#FEE2E2', icon: '#EF4444', text: '#991B1B', subtext: '#B91C1C', glow: 'hover:shadow-[0_0_15px_rgba(239,68,68,0.4)]' }; // Red
+        if (p <= 70) return { bg: '#FFFBEB', iconBg: '#FEF3C7', icon: '#F59E0B', text: '#92400E', subtext: '#B45309', glow: 'hover:shadow-[0_0_15px_rgba(245,158,11,0.4)]' }; // Yellow
+        return { bg: '#F0FFF4', iconBg: '#D1FAE5', icon: '#10B981', text: '#065F46', subtext: '#047857', glow: 'hover:shadow-[0_0_15px_rgba(16,185,129,0.4)]' }; // Green
     };
 
-    const color = percentage !== undefined ? getColorsForPercentage(percentage) : fixedColor;
+    const color = percentage !== undefined ? getColorsForPercentage(percentage) : { ...fixedColor, glow: `hover:shadow-[0_0_15px_${fixedColor.icon.replace(')', ',0.4)')}]` };
     const circumference = 2 * Math.PI * 18;
     const strokeDashoffset = percentage !== undefined ? circumference - (percentage / 100) * circumference : circumference;
 
     return (
-        <div className="bg-white p-1 rounded-xl border border-gray-200/60 shadow-sm transition-all duration-300 ease-in-out hover:shadow-md hover:-translate-y-0.5">
+        <div className={`bg-white p-1 rounded-xl border border-gray-200/60 shadow-sm transition-all duration-300 ease-in-out hover:-translate-y-1 hover:scale-105 ${color.glow}`}>
             <div className={`p-4 rounded-lg flex items-center justify-between h-full`} style={{ backgroundColor: color.bg }}>
                 <div className="flex items-center">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3`} style={{ backgroundColor: color.iconBg }}>
@@ -114,26 +131,71 @@ const StatusCard = ({ icon: Icon, value, title, subtitle, percentage, color: fix
 
 
 const Profile = () => {
-    const weeklyData = [
-      { day: 'Mon', value: 2 }, { day: 'Tue', value: 4 }, { day: 'Wed', value: 3 },
-      { day: 'Thu', value: 5 }, { day: 'Fri', value: 1 }, { day: 'Sat', value: 3 },
-      { day: 'Sun', value: 3 },
-    ];
-    
-    const monthlyData = [
-      { day: 'W1', value: 15 }, { day: 'W2', value: 25 }, 
-      { day: 'W3', value: 20 }, { day: 'W4', value: 30 },
-    ];
+    // --- MOCK REAL-TIME DATA ---
+    const allTimeTaskData = useMemo(() => [
+        { date: '2025-05-27', value: 2 }, { date: '2025-05-28', value: 4 }, { date: '2025-05-29', value: 1 },
+        { date: '2025-06-02', value: 3 }, { date: '2025-06-03', value: 5 }, { date: '2025-06-04', value: 2 },
+        { date: '2025-06-05', value: 4 },
+        { date: '2025-06-10', value: 6 }, { date: '2025-06-11', value: 3 }, { date: '2025-06-12', value: 7 },
+        { date: '2025-06-16', value: 2 }, { date: '2025-06-17', value: 4 }, { date: '2025-06-18', value: 3 },
+        { date: '2025-06-19', value: 5 }, { date: '2025-06-20', value: 1 },
+        { date: '2025-06-23', value: 3 }, { date: '2025-06-24', value: 3 }, { date: '2025-06-25', value: 4 },
+        { date: '2025-06-26', value: 5 }, { date: '2025-06-27', value: 2 },
+    ], []);
+
+    // --- STATE FOR DATE NAVIGATION ---
+    const [currentWeek, setCurrentWeek] = useState(getStartOfWeek(new Date()));
+    const [currentMonth, setCurrentMonth] = useState(new Date());
+
+    // --- DATA PROCESSING FOR CHARTS (DERIVED STATE) ---
+    const weeklyData = useMemo(() => {
+        const weekData = [];
+        const start = getStartOfWeek(currentWeek);
+        for (let i = 0; i < 7; i++) {
+            const day = new Date(start);
+            day.setDate(day.getDate() + i);
+            const dateString = day.toISOString().split('T')[0];
+            const task = allTimeTaskData.find(t => t.date === dateString);
+            weekData.push({
+                day: day.toLocaleDateString('en-US', { 'weekday': 'short' }),
+                value: task ? task.value : 0,
+            });
+        }
+        return weekData;
+    }, [currentWeek, allTimeTaskData]);
+
+    const monthlyData = useMemo(() => {
+        const month = currentMonth.getMonth();
+        const year = currentMonth.getFullYear();
+        const weeksInMonth: { [key: number]: number } = {};
+
+        allTimeTaskData
+            .filter(task => {
+                const taskDate = new Date(task.date);
+                return taskDate.getMonth() === month && taskDate.getFullYear() === year;
+            })
+            .forEach(task => {
+                const taskDate = new Date(task.date);
+                const weekNumber = Math.ceil((taskDate.getDate() + getStartOfWeek(new Date(year, month, 1)).getDay() -1) / 7);
+                weeksInMonth[weekNumber] = (weeksInMonth[weekNumber] || 0) + task.value;
+            });
+
+        return Array.from({length: 4}, (_, i) => ({
+            day: `W${i + 1}`,
+            value: weeksInMonth[i + 1] || 0
+        }));
+    }, [currentMonth, allTimeTaskData]);
+
 
     const todayDate = new Date();
     const today = todayDate.getDate();
-    const currentMonth = todayDate.getMonth();
-    const currentYear = todayDate.getFullYear();
+    const currentCalendarMonth = todayDate.getMonth();
+    const currentCalendarYear = todayDate.getFullYear();
 
     const streakDays = [20, 21, 22, 23, 24];
     
-    const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const firstDayOfMonth = new Date(currentCalendarYear, currentCalendarMonth, 1).getDay();
+    const daysInMonth = new Date(currentCalendarYear, currentCalendarMonth + 1, 0).getDate();
     
     const calendarDays = Array(firstDayOfMonth).fill(null).concat(Array.from({ length: daysInMonth }, (_, i) => i + 1));
     const calendarWeeks = [];
@@ -141,10 +203,34 @@ const Profile = () => {
         calendarWeeks.push(calendarDays.slice(i, i + 7));
     }
 
+    // --- DYNAMIC STATUS CARD DATA ---
+    const calculateStreak = (tasks, today) => {
+        const taskDates = new Set(tasks.map(t => t.date));
+        let streak = 0;
+        let currentDate = new Date(today);
+        while (true) {
+            const dateString = currentDate.toISOString().split('T')[0];
+            if (taskDates.has(dateString)) {
+                streak++;
+                currentDate.setDate(currentDate.getDate() - 1);
+            } else {
+                break;
+            }
+        }
+        return streak;
+    }
+    const dayStreak = calculateStreak(allTimeTaskData, todayDate);
+
+    // User-defined values for "Tasks Done" and "Daily Average"
+    const tasksDoneThisWeek = 22;
+    const weeklyGoal = 25;
+    const tasksDonePercentage = Math.round((tasksDoneThisWeek / weeklyGoal) * 100);
+    const dailyAverage = (tasksDoneThisWeek / 7).toFixed(1);
+
     const statusData = [
-        { icon: CheckCheck, value: "20", title: "Tasks Done", subtitle: "of 25 this week", percentage: 75 },
-        { icon: Link, value: "4", title: "Day Streak", subtitle: "current streak", color: { bg: '#EFF6FF', iconBg: '#DBEAFE', icon: '#3B82F6', text: '#1E40AF', subtext: '#1D4ED8' } },
-        { icon: TrendingUp, value: "2.4", title: "Daily Average", subtitle: "tasks per day", color: { bg: '#F5F5F4', iconBg: '#E7E5E4', icon: '#78716C', text: '#44403C', subtext: '#57534E' } }
+        { icon: CheckCheck, value: tasksDoneThisWeek.toString(), title: "Tasks Done", subtitle: `of ${weeklyGoal} this week`, percentage: tasksDonePercentage },
+        { icon: Link, value: dayStreak.toString(), title: "Day Streak", subtitle: "current streak", color: { bg: '#EFF6FF', iconBg: '#DBEAFE', icon: '#3B82F6', text: '#1E40AF', subtext: '#1D4ED8' } },
+        { icon: TrendingUp, value: dailyAverage, title: "Daily Average", subtitle: "tasks per day", color: { bg: '#F5F5F4', iconBg: '#E7E5E4', icon: '#78716C', text: '#44403C', subtext: '#57534E' } }
     ];
 
     const categoryProgressData = [
@@ -152,6 +238,34 @@ const Profile = () => {
         { label: 'Learning', value: 50, gradient: 'from-green-500 to-green-300' },
         { label: 'Personal', value: 80, gradient: 'from-purple-600 to-purple-300' },
     ];
+    
+    const navigateWeek = (direction: 'prev' | 'next') => {
+        const newWeekStart = new Date(currentWeek);
+        newWeekStart.setDate(newWeekStart.getDate() + (direction === 'prev' ? -7 : 7));
+        
+        // Sync month if it changes
+        if (newWeekStart.getMonth() !== currentMonth.getMonth()) {
+            setCurrentMonth(newWeekStart);
+        }
+        
+        setCurrentWeek(newWeekStart);
+    };
+
+    const navigateMonth = (direction: 'prev' | 'next') => {
+        const newMonth = new Date(currentMonth);
+        newMonth.setMonth(newMonth.getMonth() + (direction === 'prev' ? -1 : 1), 1); // Set to day 1 to avoid month skipping issues
+        
+        // Sync week if it's not in the new month
+        if (getStartOfWeek(currentWeek).getMonth() !== newMonth.getMonth()) {
+            setCurrentWeek(newMonth);
+        }
+        
+        setCurrentMonth(newMonth);
+    };
+
+    const weeklyTitle = `${getStartOfWeek(currentWeek).toLocaleDateString('en-US', {month: 'short', day: 'numeric' })} - ${getEndOfWeek(currentWeek).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric' })}`;
+    const monthlyTitle = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
 
     return (
         <div className="flex-1 min-h-full" style={{ background: 'linear-gradient(to bottom right, rgba(223, 240, 255, 0.8), rgba(255, 212, 242, 0.8))' }}>
@@ -163,7 +277,7 @@ const Profile = () => {
             `}</style>
             <Header currentPage='Profile'/>
             <main className="p-6">
-                <div className="grid grid-cols-1 lg:grid-cols-3 lg:items-stretch gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 lg:items-start gap-6">
                     <div className="lg:col-span-1">
                         <div className="bg-white p-6 rounded-xl border border-gray-200/80 shadow-sm flex flex-col h-full">
                             <h2 className="text-xl font-semibold text-gray-800 text-center">Hi, Username!</h2>
@@ -242,19 +356,37 @@ const Profile = () => {
                         </div>
                     </div>
 
-                    <div className="lg:col-span-2 flex flex-col gap-6">
-                        <div>
-                            <div className="flex items-center gap-2 mb-4"><h3 className="text-lg font-semibold text-gray-700">Status</h3></div>
-                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                               {statusData.map((data, index) => (<StatusCard key={index} {...data} />))}
-                           </div>
+                    <div className="lg:col-span-2 flex flex-col lg:flex-row gap-6">
+                        <div className="lg:w-1/3 flex flex-col gap-6">
+                            <div className="bg-white p-6 rounded-xl border border-gray-200/80 shadow-sm h-210">
+                                <div className="flex items-center gap-2 mb-4"><h3 className="text-lg font-semibold text-gray-700">Status</h3></div>
+                               <div className="grid grid-cols-1 gap-4">
+                                   {statusData.map((data, index) => (<StatusCard key={index} {...data} />))}
+                               </div>
+                            </div>
                         </div>
-                        <div className="grid md:grid-cols-2 gap-4 flex-grow">
+                        <div className="lg:w-2/3 grid md:grid-cols-1 gap-4 flex-grow">
                             <div className="bg-white p-4 rounded-xl border border-gray-200/80 shadow-sm flex flex-col">
-                                <AnalyticsChart data={weeklyData} title="Weekly Progress" />
+                                <div className="flex justify-between items-center px-2 mb-2">
+                                     <h3 className="text-lg font-semibold text-gray-700">Weekly Progress</h3>
+                                     <div className="flex items-center">
+                                        <button onClick={() => navigateWeek('prev')} className="p-1 rounded-full hover:bg-gray-100"><ChevronLeft className="w-4 h-4 text-gray-600"/></button>
+                                        <h3 className="text-sm font-semibold text-gray-700 w-48 text-center">{weeklyTitle}</h3>
+                                        <button onClick={() => navigateWeek('next')} className="p-1 rounded-full hover:bg-gray-100"><ChevronRight className="w-4 h-4 text-gray-600"/></button>
+                                     </div>
+                                </div>
+                                <AnalyticsChart data={weeklyData} />
                             </div>
                             <div className="bg-white p-4 rounded-xl border border-gray-200/80 shadow-sm flex flex-col">
-                                <AnalyticsChart data={monthlyData} title="Monthly Progress" />
+                                 <div className="flex justify-between items-center px-2 mb-2">
+                                     <h3 className="text-lg font-semibold text-gray-700">Monthly Progress</h3>
+                                     <div className="flex items-center">
+                                        <button onClick={() => navigateMonth('prev')} className="p-1 rounded-full hover:bg-gray-100"><ChevronLeft className="w-4 h-4 text-gray-600"/></button>
+                                        <h3 className="text-sm font-semibold text-gray-700 w-32 text-center">{monthlyTitle}</h3>
+                                        <button onClick={() => navigateMonth('next')} className="p-1 rounded-full hover:bg-gray-100"><ChevronRight className="w-4 h-4 text-gray-600"/></button>
+                                     </div>
+                                </div>
+                                <AnalyticsChart data={monthlyData} />
                             </div>
                         </div>
                     </div>
