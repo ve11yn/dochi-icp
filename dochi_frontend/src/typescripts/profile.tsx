@@ -142,15 +142,15 @@ const Profile = () => {
     }
 
     const statusData = [
-        { icon: CheckCheck, value: "17", title: "Tasks Done", subtitle: "of 25 this week", percentage: 68 },
+        { icon: CheckCheck, value: "20", title: "Tasks Done", subtitle: "of 25 this week", percentage: 75 },
         { icon: Link, value: "4", title: "Day Streak", subtitle: "current streak", color: { bg: '#EFF6FF', iconBg: '#DBEAFE', icon: '#3B82F6', text: '#1E40AF', subtext: '#1D4ED8' } },
         { icon: TrendingUp, value: "2.4", title: "Daily Average", subtitle: "tasks per day", color: { bg: '#F5F5F4', iconBg: '#E7E5E4', icon: '#78716C', text: '#44403C', subtext: '#57534E' } }
     ];
 
     const categoryProgressData = [
-        { label: 'Work', value: 75, gradient: 'from-blue-600 to-blue-400' },
-        { label: 'Learning', value: 50, gradient: 'from-green-600 to-green-400' },
-        { label: 'Personal', value: 80, gradient: 'from-purple-600 to-purple-400' },
+        { label: 'Work', value: 35, gradient: 'from-blue-600 to-blue-300' },
+        { label: 'Learning', value: 50, gradient: 'from-green-500 to-green-300' },
+        { label: 'Personal', value: 80, gradient: 'from-purple-600 to-purple-300' },
     ];
 
     return (
@@ -249,7 +249,7 @@ const Profile = () => {
                                {statusData.map((data, index) => (<StatusCard key={index} {...data} />))}
                            </div>
                         </div>
-                        <div className="grid md:grid-cols-2 gap-6 flex-grow">
+                        <div className="grid md:grid-cols-2 gap-4 flex-grow">
                             <div className="bg-white p-4 rounded-xl border border-gray-200/80 shadow-sm flex flex-col">
                                 <AnalyticsChart data={weeklyData} title="Weekly Progress" />
                             </div>
