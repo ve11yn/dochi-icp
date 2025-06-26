@@ -17,11 +17,29 @@ import {
   X,
   ClipboardList,
   PlusCircle,
-  Edit2, // Added for edit icon
+  Edit2,
 } from "lucide-react"
 import React, { useState, useEffect, useMemo, useRef } from "react"
 import Sidebar from "./sidebar"; 
 import Header from "./header"
+
+// --- Helper function to format dates as YYYY-MM-DD ---
+const formatDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+// --- Create dynamic dates for appointments ---
+const today = new Date();
+const yesterday = new Date();
+yesterday.setDate(today.getDate() - 1);
+const tomorrow = new Date();
+tomorrow.setDate(today.getDate() + 1);
+const dayAfterTomorrow = new Date();
+dayAfterTomorrow.setDate(today.getDate() + 2);
+
 
 // Type Definitions
 interface Appointment {
@@ -31,7 +49,7 @@ interface Appointment {
   endTime: string;
   color: string;
   category: string;
-  completed: boolean; // Added for dot indicator logic
+  completed: boolean;
 }
 
 function PageContent({ title }: { title:string }) {
@@ -49,7 +67,6 @@ const initialAppointmentCategories = [
     { name: "Urgent", color: "#EF4444", textColor: "text-white" },
 ];
 
-// Extracted CreationForm as a standalone component to prevent performance issues
 const CreationForm = ({
     newAptTitle, setNewAptTitle, appointmentCategories, newAptCategory, setNewAptCategory,
     isDeletingCategory, handleDeleteCategory, isAddingCategory, setIsAddingCategory,
@@ -114,29 +131,26 @@ const CreationForm = ({
 
 export default function DochiCalendar() {
   const [activeSection, setActiveSection] = useState("Calendar")
-  const [selectedDate, setSelectedDate] = useState<string>('2025-06-13')
-  const [currentMonth, setCurrentMonth] = useState(5) // June = 5 (0-indexed)
-  const [currentYear, setCurrentYear] = useState(2025)
-  const [viewMode, setViewMode] = useState<"Month" | "Week">("Week")
+  // --- States now initialized with today's date ---
+  const [selectedDate, setSelectedDate] = useState<string>(formatDate(today))
+  const [currentMonth, setCurrentMonth] = useState(today.getMonth())
+  const [currentYear, setCurrentYear] = useState(today.getFullYear())
+  const [viewMode, setViewMode] = useState<"Week" | "Month">("Week")
 
   const [currentPage, setCurrentPage] = useState("Calendar")
   const [openDate, setOpenDate] = useState<string | null>(null);
 
-  // State for creating/editing appointments
   const [isCreatingInDropdown, setIsCreatingInDropdown] = useState(false);
   const [editingAppointmentId, setEditingAppointmentId] = useState<number | null>(null);
   const [creationDropdown, setCreationDropdown] = useState<{ x: number, y: number, date: string, startTime: string } | null>(null);
   const [eventPopover, setEventPopover] = useState<{ x: number, y: number, appointment: Appointment, date: string } | null>(null);
 
-
-  // State for new appointment form
   const [newAptTitle, setNewAptTitle] = useState("");
   const [appointmentCategories, setAppointmentCategories] = useState(initialAppointmentCategories);
   const [newAptCategory, setNewAptCategory] = useState(appointmentCategories[0].name);
   const [newAptStartTime, setNewAptStartTime] = useState("09:00");
   const [newAptEndTime, setNewAptEndTime] = useState("10:00");
 
-  // State for adding/deleting a new category
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryColor, setNewCategoryColor] = useState("#8B5CF6");
@@ -145,7 +159,6 @@ export default function DochiCalendar() {
   const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1024)
   const calendarGridRef = useRef<HTMLDivElement>(null);
 
-  // Reset all temporary states when view or page changes
   useEffect(() => {
     setOpenDate(null);
     setEventPopover(null);
@@ -156,36 +169,31 @@ export default function DochiCalendar() {
     setEditingAppointmentId(null);
   }, [viewMode, currentPage]);
 
-
   const getStartOfWeek = (date: Date) => {
     const d = new Date(date);
     const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
     d.setDate(diff);
     d.setHours(0, 0, 0, 0);
-    // Assuming week starts on Monday, adjust if needed
     return d;
   }
 
-  const initialDate = new Date(selectedDate);
-  const [weekViewStartDate, setWeekViewStartDate] = useState(getStartOfWeek(initialDate));
+  const [weekViewStartDate, setWeekViewStartDate] = useState(getStartOfWeek(today));
 
+  // --- Appointments are now relative to the current date ---
   const [appointments, setAppointments] = useState<{ [date: string]: Appointment[] }>({
-    "2025-06-10": [
+    [formatDate(yesterday)]: [
         { id: 1, title: "Product Design Course", startTime: "09:30", endTime: "12:00", color: "#10B981", category: "Personal", completed: false },
     ],
-    "2025-06-09": [
-        { id: 2, title: "Conversational Interview", startTime: "12:30", endTime: "14:00", color: "#8B5CF6", category: "Work", completed: false },
-    ],
-    "2025-06-11": [
+    [formatDate(today)]: [
         { id: 3, title: "Usability testing", startTime: "09:00", endTime: "11:00", color: "#8B5CF6", category: "Work", completed: true },
         { id: 4, title: "App Design", startTime: "13:00", endTime: "15:30", color: "#10B981", category: "Personal", completed: false },
     ],
-    "2025-06-13": [
-         { id: 5, title: "Frontend developement", startTime: "10:00", endTime: "13:00", color: "#3B82F6", category: "Work", completed: false },
+    [formatDate(tomorrow)]: [
+         { id: 5, title: "Frontend development", startTime: "10:00", endTime: "13:00", color: "#3B82F6", category: "Work", completed: false },
     ],
-    "2025-07-10": [
-        { id: 7, title: "Dentist Appointment", startTime: "2:00 P.M.", endTime: "3:00 P.M.", color: "#10B981", category: "Personal", completed: false },
+    [formatDate(dayAfterTomorrow)]: [
+        { id: 7, title: "Dentist Appointment", startTime: "14:00", endTime: "15:00", color: "#EF4444", category: "Urgent", completed: false },
     ]
   });
 
@@ -196,10 +204,10 @@ export default function DochiCalendar() {
       let [hours, minutes] = t.split(':').map(Number);
       if (period.toLowerCase().startsWith('p') && hours < 12) hours += 12;
       if (period.toLowerCase().startsWith('a') && hours === 12) hours = 0;
-      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+      return `${String(hours).padStart(2, '0')}:${String(minutes || '00').padStart(2, '0')}`;
     }
     const [hour, minute] = time.split(':');
-    return `${hour.padStart(2, '0')}:${minute || '00'}`;
+    return `${String(hour).padStart(2, '0')}:${String(minute || '00').padStart(2, '0')}`;
   };
 
   const handleSaveNewAppointment = () => {
@@ -210,7 +218,7 @@ export default function DochiCalendar() {
   
     const formatTime12hr = (time: string) => {
       let [hours, minutes] = time.split(':').map(Number);
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
     };
   
     if (editingAppointmentId) {
@@ -276,7 +284,6 @@ export default function DochiCalendar() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [creationDropdown, eventPopover]);
-
 
     const handleDeleteAppointment = (e: React.MouseEvent, dateStr: string, appointmentId: number) => {
         e.stopPropagation();
@@ -501,18 +508,15 @@ export default function DochiCalendar() {
     const grid = calendarGridRef.current;
     if (!grid) return;
 
-    // Calculate hour based on the vertical click position
     const gridRect = grid.getBoundingClientRect();
     const relativeY = e.clientY - gridRect.top;
     const hour = Math.floor(relativeY / (gridRect.height / 24));
     
-    // Set form defaults
     setNewAptTitle('');
     setEditingAppointmentId(null);
     setNewAptStartTime(formatTimeForInput(`${hour}:00`));
     setNewAptEndTime(formatTimeForInput(`${hour + 1}:00`));
 
-    // Position popover next to cursor, with boundary checks
     const popupWidth = 300;
     let popupX = e.clientX + 15;
     if (popupX + popupWidth > window.innerWidth) {
@@ -629,7 +633,6 @@ export default function DochiCalendar() {
           {currentPage === "Calendar" ? (
             <div className="flex flex-col lg:flex-row lg:space-x-8 h-full">
               <div className="w-full lg:w-72 flex flex-col space-y-6 flex-shrink-0 mb-8 lg:mb-0">
-                {/* Mini Calendar */}
                 <div className="bg-white rounded-lg border border-gray-200 p-4">
                   <div className="flex items-center justify-between mb-4">
                     <button onClick={() => navigateMonth("prev")} className="p-1 rounded hover:bg-gray-100">
@@ -677,7 +680,6 @@ export default function DochiCalendar() {
                   </div>
                 </div>
 
-                {/* Events List Card */}
                  <div className="bg-white rounded-lg border border-gray-200 flex-1 flex flex-col min-h-0">
                     <CardHeader className="p-4 border-b border-gray-200 flex justify-center items-center">
                         <CardTitle className="text-sm font-semibold flex items-center text-gray-700">
@@ -711,10 +713,8 @@ export default function DochiCalendar() {
                 </div>
               </div>
 
-              {/* Main Calendar View */}
               <div className="flex-1 min-w-0">
                 <div className="bg-white rounded-xl border border-black/10 h-full flex flex-col">
-                  {/* DYNAMIC HEADER */}
                   <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200 flex-shrink-0">
                       <div className="flex items-center space-x-1 bg-gray-100 rounded-full p-1">
                           <Button variant='ghost' size="sm" onClick={() => setViewMode("Month")} className={`rounded-full px-4 py-1 text-xs font-semibold transition-none ${viewMode === 'Month' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:bg-gray-200'}`}>
@@ -779,14 +779,14 @@ export default function DochiCalendar() {
                         )
                       })}
                     </div>
-                  ) : ( // NEW WEEK VIEW
+                  ) : (
                     <div className="flex-1 flex flex-col overflow-auto" ref={calendarGridRef}>
                         <div className="grid grid-cols-[auto_1fr] flex-shrink-0 sticky top-0 bg-white z-10 border-b border-gray-200">
                             <div className="w-16"></div>
                             <div className="grid grid-cols-7">
                                 {weekDays.map((day) => {
-                                    const today = new Date();
-                                    const isToday = day.getFullYear() === today.getFullYear() && day.getMonth() === today.getMonth() && day.getDate() === today.getDate();
+                                    const todayObj = new Date();
+                                    const isToday = day.getFullYear() === todayObj.getFullYear() && day.getMonth() === todayObj.getMonth() && day.getDate() === todayObj.getDate();
                                     return (
                                         <div key={day.toISOString()} className="py-3 text-center border-r border-gray-200">
                                             <p className="text-xs text-gray-400 font-medium">{daysOfWeek[day.getDay()]}</p>
@@ -852,8 +852,6 @@ export default function DochiCalendar() {
           ) : (
             <PageContent title={currentPage} />
           )}
-
-          {/* Popovers for Week View are now fixed to the viewport */}
           {creationDropdown && (
             <div className="creation-dropdown fixed w-[300px] bg-white backdrop-blur-md shadow-xl rounded-lg border border-black/5 z-20 animate-dropdown transform -translate-y-1/2" style={{ top: creationDropdown.y, left: creationDropdown.x }}>
                   <AppointmentListPopover date={creationDropdown.date} />
