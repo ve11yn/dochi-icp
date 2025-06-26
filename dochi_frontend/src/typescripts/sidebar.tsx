@@ -163,7 +163,7 @@ export default function Sidebar({ activeSection, handleNavClick }: SidebarProps)
                             <div className={`flex items-center w-full ${sidebarCollapsed && windowWidth >= 1024 ? "justify-center" : "justify-between"}`}>
                                 <div className="flex items-center space-x-3">
                                     <div className="w-6 h-6 bg-[#FFD4F2] rounded-full flex-shrink-0"></div>
-                                    {(!sidebarCollapsed || windowWidth < 1024) && <span className="text-sm font-medium">username</span>}
+                                    {(!sidebarCollapsed || windowWidth < 1024) && <span className="text-sm font-medium">Username</span>}
                                 </div>
                                 {(!sidebarCollapsed || windowWidth < 1024) && <MoreHorizontal className="w-4 h-4 text-gray-400" />}
                             </div>
