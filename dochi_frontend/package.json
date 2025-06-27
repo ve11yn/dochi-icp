@@ -5,11 +5,20 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "dfx start --clean --background",
+    "stop": "dfx stop",
+    "deploy": "dfx deploy",
+    "deploy:login": "dfx deploy login_backend",
+    "generate": "dfx generate login_backend",
+    "reset": "dfx start --clean --background && dfx deploy"
   },
   "dependencies": {
+    "@dfinity/agent": "^2.4.1",
+    "@dfinity/auth-client": "^2.4.1",
+    "@dfinity/candid": "^2.4.1",
+    "@dfinity/principal": "^2.4.1",
     "@headlessui/react": "^2.2.4",
     "@heroicons/react": "^2.2.0",
     "@radix-ui/react-slot": "^1.2.3",
@@ -24,8 +33,9 @@
     "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
+    "@dfinity/didc": "^0.0.4",
     "@eslint/js": "^9.25.0",
-    "@types/node": "^24.0.1",
+    "@types/node": "^24.0.4",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.4.1",

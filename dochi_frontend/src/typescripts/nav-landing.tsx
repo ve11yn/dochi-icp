@@ -24,9 +24,12 @@ function NavLanding() {
             Calendar
           </Link>
 
-          <a href="#login" className="bg-white text-gray-700 px-4 py-1 rounded-full border border-gray-300 hover:bg-gray-50 hover:border-gray-400 font-medium transition-all shadow-sm">
+          <Link
+            to="/login"
+            className="bg-white text-gray-700 px-4 py-1 rounded-full border border-gray-300 hover:bg-gray-50 hover:border-gray-400 font-medium transition-all shadow-sm"
+          >
             Login
-          </a>
+          </Link>
         </div>
       </div>
     </>

@@ -13,6 +13,7 @@ import Settings from './typescripts/settings';
 import Support from './typescripts/support';
 import Profile from './typescripts/profile';
 import Sidebar from './typescripts/sidebar';
+import Login from './typescripts/login';
 
 // Map routes to section names for sidebar
 const routeToSection: Record<string, string> = {
@@ -42,7 +43,7 @@ function App() {
     setActiveSection(page);
   };
 
-  const showSidebar = location.pathname !== '/' && location.pathname !== '/colorPalette';
+  const showSidebar = location.pathname !== '/' && location.pathname !== '/login' && location.pathname !== '/colorPalette';
 
   return (
     <div className="w-full flex h-screen bg-gray-50">
@@ -64,6 +65,8 @@ function App() {
           <Route path="/settings" element={<Settings/>}/>
           <Route path="/support" element={<Support/>}/>
           <Route path="/profile" element={<Profile/>}/>
+          <Route path="/login" element={<Login />} />
+    
           <Route path="*" element={<div>404 - Page Not Found</div>} />
         </Routes>
       </div>

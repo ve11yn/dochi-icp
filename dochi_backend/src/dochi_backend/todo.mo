@@ -5,6 +5,8 @@ import Result "mo:base/Result";
 import HashMap "mo:base/HashMap";
 import Iter "mo:base/Iter";
 import Option "mo:base/Option";
+import Nat32 "mo:base/Nat32";
+import Char "mo:base/Char";
 
 actor TodoNotesBackend {
     
@@ -383,9 +385,9 @@ actor TodoNotesBackend {
     };
 
     // Search functionality
-    public query func searchTodos(query: Text) : async [TodoItem] {
+    public query func searchTodos(searchText: Text) : async [TodoItem] {
         let allTodos = Iter.toArray(todos.vals());
-        let lowerQuery = Text.map(query, func(c: Char): Char {
+        let lowerQuery = Text.map(searchText, func(c: Char): Char {
             if (c >= 'A' and c <= 'Z') {
                 Char.fromNat32(Char.toNat32(c) + 32)
             } else {
@@ -413,9 +415,9 @@ actor TodoNotesBackend {
         });
     };
 
-    public query func searchNotes(query: Text) : async [Note] {
+    public query func searchNotes(searchText: Text) : async [Note] {
         let allNotes = Iter.toArray(notes.vals());
-        let lowerQuery = Text.map(query, func(c: Char): Char {
+        let lowerQuery = Text.map(searchText, func(c: Char): Char {
             if (c >= 'A' and c <= 'Z') {
                 Char.fromNat32(Char.toNat32(c) + 32)
             } else {

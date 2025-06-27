@@ -5,6 +5,10 @@
       "type": "motoko",
       "main": "dochi_backend/src/dochi_backend/main.mo"
     },
+    "login_backend": {
+      "type": "motoko",
+      "main": "dochi_backend/src/dochi_backend/login.mo"
+    },
     "todo_backend": {
       "type": "motoko",
       "main": "dochi_backend/src/dochi_backend/todo.mo"
@@ -12,7 +16,18 @@
     "dochi_frontend": {
       "type": "assets",
       "source": ["dochi_frontend/dist/"],
-      "dependencies": ["dochi_backend", "todo_backend"]
+      "dependencies": ["dochi_backend", "todo_backend", "login_backend"]
+    },
+    "internet_identity": {
+      "type": "custom",
+      "candid": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity.did",
+      "wasm": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity_dev.wasm.gz",
+      "shrink": false,
+      "remote": {
+        "id": {
+          "ic": "rdmx6-jaaaa-aaaaa-aaadq-cai"
+        }
+      }
     }
   },
   "defaults": {
@@ -25,6 +40,11 @@
     "local": {
       "bind": "127.0.0.1:4943",
       "type": "ephemeral"
+    },
+    "ic": {
+      "providers": ["https://ic0.app"],
+      "type": "persistent"
     }
-  }
+  },
+  "output_env_file": "dochi_frontend/.env"
 }
