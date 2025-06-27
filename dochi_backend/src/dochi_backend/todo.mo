@@ -1,6 +1,7 @@
 import Array "mo:base/Array";
 import Time "mo:base/Time";
 import Text "mo:base/Text";
+import Char "mo:base/Char";  // Added missing import
 import Result "mo:base/Result";
 import HashMap "mo:base/HashMap";
 import Iter "mo:base/Iter";
@@ -124,6 +125,17 @@ actor TodoNotesBackend {
         if (subtasks.size() == 0) return false;
         Array.foldLeft<Subtask, Bool>(subtasks, true, func(acc: Bool, subtask: Subtask): Bool {
             acc and subtask.completed
+        });
+    };
+
+    // Helper function for case-insensitive string comparison
+    private func toLowercase(text: Text) : Text {
+        Text.map(text, func(c: Char): Char {
+            if (c >= 'A' and c <= 'Z') {
+                Char.fromNat32(Char.toNat32(c) + 32)
+            } else {
+                c
+            }
         });
     };
 
@@ -385,29 +397,11 @@ actor TodoNotesBackend {
     // Search functionality
     public query func searchTodos(query: Text) : async [TodoItem] {
         let allTodos = Iter.toArray(todos.vals());
-        let lowerQuery = Text.map(query, func(c: Char): Char {
-            if (c >= 'A' and c <= 'Z') {
-                Char.fromNat32(Char.toNat32(c) + 32)
-            } else {
-                c
-            }
-        });
+        let lowerQuery = toLowercase(query);
         
         Array.filter<TodoItem>(allTodos, func(todo: TodoItem): Bool {
-            let lowerTitle = Text.map(todo.title, func(c: Char): Char {
-                if (c >= 'A' and c <= 'Z') {
-                    Char.fromNat32(Char.toNat32(c) + 32)
-                } else {
-                    c
-                }
-            });
-            let lowerDesc = Text.map(todo.description, func(c: Char): Char {
-                if (c >= 'A' and c <= 'Z') {
-                    Char.fromNat32(Char.toNat32(c) + 32)
-                } else {
-                    c
-                }
-            });
+            let lowerTitle = toLowercase(todo.title);
+            let lowerDesc = toLowercase(todo.description);
             
             Text.contains(lowerTitle, #text lowerQuery) or Text.contains(lowerDesc, #text lowerQuery)
         });
@@ -415,29 +409,11 @@ actor TodoNotesBackend {
 
     public query func searchNotes(query: Text) : async [Note] {
         let allNotes = Iter.toArray(notes.vals());
-        let lowerQuery = Text.map(query, func(c: Char): Char {
-            if (c >= 'A' and c <= 'Z') {
-                Char.fromNat32(Char.toNat32(c) + 32)
-            } else {
-                c
-            }
-        });
+        let lowerQuery = toLowercase(query);
         
         Array.filter<Note>(allNotes, func(note: Note): Bool {
-            let lowerTitle = Text.map(note.title, func(c: Char): Char {
-                if (c >= 'A' and c <= 'Z') {
-                    Char.fromNat32(Char.toNat32(c) + 32)
-                } else {
-                    c
-                }
-            });
-            let lowerDesc = Text.map(note.description, func(c: Char): Char {
-                if (c >= 'A' and c <= 'Z') {
-                    Char.fromNat32(Char.toNat32(c) + 32)
-                } else {
-                    c
-                }
-            });
+            let lowerTitle = toLowercase(note.title);
+            let lowerDesc = toLowercase(note.description);
             
             Text.contains(lowerTitle, #text lowerQuery) or Text.contains(lowerDesc, #text lowerQuery)
         });

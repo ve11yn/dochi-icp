@@ -6,29 +6,29 @@ interface FlippedGradientBackgroundProps {
 
 function FlippedGradientBackground({ children }: FlippedGradientBackgroundProps) {
   return (
-    <div className="h-300 w-screen relative m-0 p-0">
-      {/* Background Image */}
+    <div className="relative w-full">
+      {/* Positioned background behind the content */}
       <div
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat w-full h-full"
+        className="absolute inset-0 z-0 pointer-events-none"
         style={{
-          backgroundImage: `url(${bg})`
+          backgroundImage: `url(${bg})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          maskImage:
+            'linear-gradient(to top, white 0%, rgba(255,255,255,0.9) 40%, transparent 60%)',
+          WebkitMaskImage:
+            'linear-gradient(to top, white 0%, rgba(255,255,255,0.9) 40%, transparent 60%)',
         }}
       />
-      
-      {/* Inverted White Fade Overlay - fades upward from bottom */}
-      <div
-        className="absolute inset-0 w-full h-full"
-        style={{
-          background: 'linear-gradient(0deg, transparent 0%, transparent 20%, rgba(255,255,255,0.9) 40%, white 50%)'
-        }}
-      />
-      
-      {/* Content */}
+
+      {/* Footer or other content sits on top */}
       <div className="relative z-10 w-full">
         {children}
       </div>
     </div>
   );
 }
+
 
 export default FlippedGradientBackground;
