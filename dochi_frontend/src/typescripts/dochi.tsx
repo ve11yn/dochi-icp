@@ -3,10 +3,16 @@
 import { useRef, useEffect } from "react"
 
 interface DochiProps {
-  size?: number // Dynamic size prop - can be set from parent components
+  size?: number;
+  auraColor?: string;
 }
 
-export default function Dochi({ size = 120 }: DochiProps) {
+/**
+ * A standalone, animated Dochi character component.
+ * @param size The size of the character in pixels. Defaults to 200.
+ * @param auraColor The color of the glow effect. Defaults to a soft lavender.
+ */
+export default function Dochi({ size = 200, auraColor = 'rgba(220, 215, 255, 0.7)' }: DochiProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationRef = useRef<number>(0)
   
@@ -20,13 +26,10 @@ export default function Dochi({ size = 120 }: DochiProps) {
     // Set canvas to square size with proper DPI handling
     const setCanvasSize = () => {
       const dpr = window.devicePixelRatio || 1
-      
-      // Make canvas square and size it properly
       canvas.width = size * dpr 
       canvas.height = size * dpr
       canvas.style.width = size + 'px'
       canvas.style.height = size + 'px'
-      
       ctx.scale(dpr, dpr)
     }
     
@@ -41,28 +44,7 @@ export default function Dochi({ size = 120 }: DochiProps) {
     let currentX = 0
     let currentY = 0
     
-    // Color palette
-    const colors = {
-      pink:     { r: 255, g: 235, b: 245 },
-      lavender: { r: 240, g: 240, b: 255 },
-      peach:    { r: 255, g: 240, b: 235 },
-      blue:     { r: 230, g: 250, b: 255 },
-      white:    { r: 255, g: 255, b: 255 }
-    }
-
-    // Function to smoothly blend colors with easing
-    const lerpColor = (color1: any, color2: any, t: number) => {
-      const easedT = t < 0.5
-        ? 4 * t * t * t
-        : 1 - Math.pow(-2 * t + 2, 3) / 2
-
-      return {
-        r: Math.round(color1.r + (color2.r - color1.r) * easedT),
-        g: Math.round(color1.g + (color2.g - color1.g) * easedT),
-        b: Math.round(color1.b + (color2.b - color1.b) * easedT)
-      }
-    }
-
+    // Function to create the wobbly path for the character
     const createMochiPath = (
       ctx: CanvasRenderingContext2D, 
       centerX: number, 
@@ -73,11 +55,13 @@ export default function Dochi({ size = 120 }: DochiProps) {
       ctx.beginPath()
       const points = 300
       const angleStep = (Math.PI * 2) / points
-      const wobble = radius * 0.07
+      // Reduced the wobble amplitude for a softer, mochi-like feel
+      const wobble = radius * 0.07 
 
       for (let i = 0; i <= points; i++) {
         const angle = i * angleStep
-        const r = radius + Math.sin(time * 0.8 + angle * 2) * wobble
+        // Slowed down the wobble frequencies for a gentler, doughier movement
+        const r = radius + Math.sin(time * 0.8 + angle * 2) * wobble;
         const x = centerX + Math.cos(angle) * r
         const y = centerY + Math.sin(angle) * r
 
@@ -95,103 +79,81 @@ export default function Dochi({ size = 120 }: DochiProps) {
       const rect = canvas.getBoundingClientRect()
       mouseX = e.clientX - rect.left
       mouseY = e.clientY - rect.top
-      
-      // Reduced movement sensitivity for smaller canvas
       targetX = (mouseX - size / 2) / size * 15
       targetY = (mouseY - size / 2) / size * 15
     }
     
     canvas.addEventListener('mousemove', handleMouseMove)
     
-    // Animation function
+    // Main animation function
     const animate = () => {
       ctx.clearRect(0, 0, size, size)
-      
       time += 0.016
-      
       currentX += (targetX - currentX) * 0.1
       currentY += (targetY - currentY) * 0.1
       
       const centerX = size / 2
-      const centerY = size / 2 + Math.sin(time * 0.8) * 5 // Reduced floating movement
+      // Reduced the floating amplitude and speed for a calmer movement
+      const centerY = size / 2 + Math.sin(time * 0.7) * 4
+      const radius = size * 0.35 
       
-      // Make radius fill most of the canvas with some padding
-      const radius = size * 0.35 // Increased from 0.4 to fill more space
-      
-      ctx.save()
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.1)'
-      ctx.shadowBlur = radius * 0.3
-      ctx.shadowOffsetY = radius * 0.1
-      
-      ctx.beginPath()
+      // 1. CREATE THE AURA/GLOW using the passed auraColor prop
+      const glowGradient = ctx.createRadialGradient(
+          centerX, centerY, radius * 0.7,
+          centerX, centerY, radius * 1.2
+      );
+
+      // Use the auraColor prop here
+      const transparentAuraColor = auraColor.replace(/[^,]+(?=\))/, '0');
+      glowGradient.addColorStop(0, auraColor);
+      glowGradient.addColorStop(1, transparentAuraColor);
+
+      ctx.fillStyle = glowGradient;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius * 1.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 2. CREATE THE BODY SHAPE (as a clipping mask)
+      ctx.save();
       createMochiPath(ctx, centerX, centerY, radius, time)
       ctx.clip()
       
-      const gradientAngle = time * 0.2
-      const gradX1 = centerX + Math.cos(gradientAngle) * radius * 1.5
-      const gradY1 = centerY + Math.sin(gradientAngle) * radius * 1.5
-      const gradX2 = centerX - Math.cos(gradientAngle) * radius * 1.5
-      const gradY2 = centerY - Math.sin(gradientAngle) * radius * 1.5
+      // 3. CREATE THE BODY COLOR GRADIENT
+      const linearGradient = ctx.createLinearGradient(centerX - radius, centerY - radius, centerX + radius, centerY + radius)
       
-      const linearGradient = ctx.createLinearGradient(gradX1, gradY1, gradX2, gradY2)
-      
-      const numStops = 20
-      const baseColors = [colors.white, colors.pink, colors.lavender, colors.blue, colors.peach]
-      const t = (time * 0.1) % baseColors.length
-      const index = Math.floor(t)
-      const blendT = t - index
-
-      const fromSeq = baseColors.slice(index).concat(baseColors.slice(0, index))
-      const toSeq = baseColors.slice(index + 1).concat(baseColors.slice(0, index + 1))
-
-      const colorSequence = fromSeq.map((fromColor, i) => {
-        const toColor = toSeq[i % baseColors.length]
-        return lerpColor(fromColor, toColor, blendT)
-      })
-      
-      for (let i = 0; i <= numStops; i++) {
-        const position = i / numStops
-        const scaledPosition = position * (colorSequence.length - 1)
-        const colorIndex = Math.floor(scaledPosition)
-        const localT = scaledPosition - colorIndex
-        
-        const fromColor = colorSequence[colorIndex % colorSequence.length]
-        const toColor = colorSequence[(colorIndex + 1) % colorSequence.length]
-        
-        const blendedColor = lerpColor(fromColor, toColor, localT)
-        linearGradient.addColorStop(position, `rgb(${blendedColor.r}, ${blendedColor.g}, ${blendedColor.b})`)
-      }
+      // Symmetrical gradient for even color distribution.
+      linearGradient.addColorStop(0, 'rgb(170, 210, 255)');      // Saturated Sky Blue
+      linearGradient.addColorStop(0.5, 'rgb(255, 240, 245)');    // Central light transition color
+      linearGradient.addColorStop(1, 'rgb(255, 190, 220)');      // Saturated Pastel Pink
       
       ctx.fillStyle = linearGradient
-      ctx.fillRect(centerX - radius * 1.5, centerY - radius * 1.5, radius * 3, radius * 3)
+      ctx.fillRect(0, 0, size, size)
       
+      // 4. ADD A SHARPER, SHINIER HIGHLIGHT
       const highlightGradient = ctx.createRadialGradient(
-        centerX - radius * 0.3, centerY - radius * 0.3, 0,
-        centerX, centerY, radius
+        centerX - radius * 0.4, centerY - radius * 0.5, 0,
+        centerX - radius * 0.2, centerY - radius * 0.2, radius * 0.6
       )
-      highlightGradient.addColorStop(0, 'rgba(255, 255, 255, 0.5)')
-      highlightGradient.addColorStop(0.3, 'rgba(255, 255, 255, 0.2)')
-      highlightGradient.addColorStop(1, 'transparent')
-      ctx.fillStyle = highlightGradient
-      ctx.fillRect(centerX - radius * 1.5, centerY - radius * 1.5, radius * 3, radius * 3)
+      highlightGradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+      highlightGradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.3)');
+      highlightGradient.addColorStop(1, 'transparent');
       
+      ctx.fillStyle = highlightGradient
+      ctx.fillRect(0, 0, size, size)
       ctx.restore()
       
-      // Draw face
+      // 5. DRAW THE FACE
       const eyeSpacing = radius * 0.35
       const eyeY = centerY - radius * 0.01
-      
       ctx.fillStyle = '#000000'
       
-      // Left eye
+      // Eyes
       ctx.save()
       ctx.translate(centerX - eyeSpacing + currentX * 0.5, eyeY + currentY * 0.5)
       ctx.beginPath()
       ctx.ellipse(0, 0, radius * 0.1, radius * 0.13, 0, 0, Math.PI * 2)
       ctx.fill()
       ctx.restore()
-      
-      // Right eye
       ctx.save()
       ctx.translate(centerX + eyeSpacing + currentX * 0.5, eyeY + currentY * 0.5)
       ctx.beginPath()
@@ -222,36 +184,11 @@ export default function Dochi({ size = 120 }: DochiProps) {
         cancelAnimationFrame(animationRef.current)
       }
     }
-  }, [size])
+  }, [size, auraColor])
     
   return (
-    <div 
-      style={{ 
-        width: size, 
-        height: size, 
-        display: 'inline-block',
-        lineHeight: 0,
-        fontSize: 0,
-        padding: 0,
-        margin: 0,
-        border: 0,
-        flexShrink: 0 
-      }}
-    >
-      <canvas
-        ref={canvasRef}
-        style={{
-          width: '100%',
-          height: '100%',
-          display: 'block',
-          margin: 0,
-          padding: 0,
-          border: 'none',
-          outline: 'none',
-          backgroundColor: 'transparent',
-          verticalAlign: 'top'
-        }}
-      />
+    <div style={{ flexShrink: 0 }}>
+      <canvas ref={canvasRef} style={{ display: 'block' }}/>
     </div>
   )
 }
