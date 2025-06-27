@@ -1,6 +1,6 @@
 import Header from "./header";
 import Dochi from "./dochi";
-import { Link, CheckCheck, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Link, CheckCheck, TrendingUp, ChevronLeft, ChevronRight, Clock, CalendarDays, Target } from 'lucide-react';
 import React, { useState, useMemo } from "react";
 
 // --- Helper Functions for Date Manipulations ---
@@ -99,8 +99,8 @@ const StatusCard = ({ icon: Icon, value, title, subtitle, percentage, color: fix
     const strokeDashoffset = percentage !== undefined ? circumference - (percentage / 100) * circumference : circumference;
 
     return (
-        <div className={`bg-white p-1 rounded-xl border border-gray-200/60 shadow-sm transition-all duration-300 ease-in-out hover:-translate-y-1 hover:scale-105 ${color.glow}`}>
-            <div className={`p-4 rounded-lg flex items-center justify-between h-full`} style={{ backgroundColor: color.bg }}>
+        <div className={`bg-white p-1 rounded-xl border border-gray-200/60 shadow-sm transition-all duration-300 ease-in-out hover:-translate-y-1 hover:scale-105 ${color.glow} group relative cursor-pointer`}>
+            <div className={`p-4 rounded-lg flex items-center justify-between h-full transition-all duration-300 group-hover:blur-[2px] group-hover:brightness-[0.8]`} style={{ backgroundColor: color.bg }}>
                 <div className="flex items-center">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3`} style={{ backgroundColor: color.iconBg }}>
                         <Icon className="w-5 h-5" style={{ color: color.icon }} />
@@ -124,6 +124,9 @@ const StatusCard = ({ icon: Icon, value, title, subtitle, percentage, color: fix
                         <span className="absolute inset-0 flex items-center justify-center text-xs font-bold" style={{ color: color.text }}>{percentage}%</span>
                     </div>
                 )}
+            </div>
+            <div className="absolute inset-1 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <span className="text-white text-center text-xs font-semibold px-4">Click to see more details</span>
             </div>
         </div>
     );
@@ -227,10 +230,18 @@ const Profile = () => {
     const tasksDonePercentage = Math.round((tasksDoneThisWeek / weeklyGoal) * 100);
     const dailyAverage = (tasksDoneThisWeek / 7).toFixed(1);
 
+    const currentYear = new Date().getFullYear();
+    const totalTasksThisYear = allTimeTaskData
+        .filter(task => new Date(task.date).getFullYear() === currentYear)
+        .reduce((sum, task) => sum + task.value, 0);
+
     const statusData = [
         { icon: CheckCheck, value: tasksDoneThisWeek.toString(), title: "Tasks Done", subtitle: `of ${weeklyGoal} this week`, percentage: tasksDonePercentage },
         { icon: Link, value: dayStreak.toString(), title: "Day Streak", subtitle: "current streak", color: { bg: '#EFF6FF', iconBg: '#DBEAFE', icon: '#3B82F6', text: '#1E40AF', subtext: '#1D4ED8' } },
-        { icon: TrendingUp, value: dailyAverage, title: "Daily Average", subtitle: "tasks per day", color: { bg: '#F5F5F4', iconBg: '#E7E5E4', icon: '#78716C', text: '#44403C', subtext: '#57534E' } }
+        { icon: TrendingUp, value: dailyAverage, title: "Daily Average", subtitle: "tasks per day", color: { bg: '#F5F5F4', iconBg: '#E7E5E4', icon: '#78716C', text: '#44403C', subtext: '#57534E' } },
+        { icon: Clock, value: "3.5h", title: "Longest Focus", subtitle: "in a single session", color: { bg: '#FFFBEB', iconBg: '#FEF3C7', icon: '#F59E0B', text: '#92400E', subtext: '#B45309' } },
+        { icon: CalendarDays, value: "Jan 2023", title: "Member Since", subtitle: "joined the platform", color: { bg: '#F0F9FF', iconBg: '#E0F2FE', icon: '#0EA5E9', text: '#0C4A6E', subtext: '#075985' } },
+        { icon: Target, value: totalTasksThisYear.toString(), title: "Total Tasks", subtitle: `in ${currentYear}`, color: { bg: '#FEF2F2', iconBg: '#FEE2E2', icon: '#EF4444', text: '#991B1B', subtext: '#B91C1C' } }
     ];
 
     const categoryProgressData = [
@@ -243,7 +254,6 @@ const Profile = () => {
         const newWeekStart = new Date(currentWeek);
         newWeekStart.setDate(newWeekStart.getDate() + (direction === 'prev' ? -7 : 7));
         
-        // Sync month if it changes
         if (newWeekStart.getMonth() !== currentMonth.getMonth()) {
             setCurrentMonth(newWeekStart);
         }
@@ -253,9 +263,8 @@ const Profile = () => {
 
     const navigateMonth = (direction: 'prev' | 'next') => {
         const newMonth = new Date(currentMonth);
-        newMonth.setMonth(newMonth.getMonth() + (direction === 'prev' ? -1 : 1), 1); // Set to day 1 to avoid month skipping issues
+        newMonth.setMonth(newMonth.getMonth() + (direction === 'prev' ? -1 : 1), 1);
         
-        // Sync week if it's not in the new month
         if (getStartOfWeek(currentWeek).getMonth() !== newMonth.getMonth()) {
             setCurrentWeek(newMonth);
         }
@@ -277,8 +286,8 @@ const Profile = () => {
             `}</style>
             <Header currentPage='Profile'/>
             <main className="p-6">
-                <div className="grid grid-cols-1 lg:grid-cols-3 lg:items-start gap-6">
-                    <div className="lg:col-span-1">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-1 h-full">
                         <div className="bg-white p-6 rounded-xl border border-gray-200/80 shadow-sm flex flex-col h-full">
                             <h2 className="text-xl font-semibold text-gray-800 text-center">Hi, Username!</h2>
                             <div className="flex justify-center items-center my-4">
@@ -310,8 +319,8 @@ const Profile = () => {
                                 ))}
                             </div>
                             
-                            <div className="mt-12 flex-grow flex flex-col">
-                                <h3 className="text-md font-semibold text-gray-700 mb-4 text-center">Streak Calendar</h3>
+                            <div className="mt-8 flex-grow flex flex-col">
+                                <h3 className="text-md font-semibold text-gray-700 mb-3 text-center">Streak Calendar</h3>
                                 <div className="mt-2 grid grid-cols-7 gap-1 text-center text-xs text-gray-500 font-medium">
                                     {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(day => <div key={day}>{day}</div>)}
                                 </div>
@@ -357,15 +366,15 @@ const Profile = () => {
                     </div>
 
                     <div className="lg:col-span-2 flex flex-col lg:flex-row gap-6">
-                        <div className="lg:w-1/3 flex flex-col gap-6">
-                            <div className="bg-white p-6 rounded-xl border border-gray-200/80 shadow-sm h-210">
+                        <div className="lg:w-1/3 flex flex-col gap-6 h-full">
+                            <div className="bg-white p-6 rounded-xl border border-gray-200/80 shadow-sm flex flex-col h-full">
                                 <div className="flex items-center gap-2 mb-4"><h3 className="text-lg font-semibold text-gray-700">Status</h3></div>
-                               <div className="grid grid-cols-1 gap-4">
+                               <div className="grid grid-cols-1 gap-4 flex-grow">
                                    {statusData.map((data, index) => (<StatusCard key={index} {...data} />))}
                                </div>
                             </div>
                         </div>
-                        <div className="lg:w-2/3 grid md:grid-cols-1 gap-4 flex-grow">
+                        <div className="lg:w-2/3 grid grid-rows-2 gap-4 h-full">
                             <div className="bg-white p-4 rounded-xl border border-gray-200/80 shadow-sm flex flex-col">
                                 <div className="flex justify-between items-center px-2 mb-2">
                                      <h3 className="text-lg font-semibold text-gray-700">Weekly Progress</h3>
