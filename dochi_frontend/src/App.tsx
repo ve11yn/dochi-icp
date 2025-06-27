@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 
 // Import all your page components
 import Landing from './typescripts/landing';
-import DochiCalendar from './typescripts/dochi-calendar';
+import DochiCalendar from './typescripts/calendar';
 import ToDo from './typescripts/to-do';
 import Focus from './typescripts/focus';
 import DochiLLM from './typescripts/dochi-llm';
