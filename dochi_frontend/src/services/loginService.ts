@@ -3,8 +3,8 @@ import { AuthClient } from '@dfinity/auth-client';
 import { Actor, HttpAgent, ActorSubclass } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
 // Corrected import: Alias idlFactory for clarity and to avoid type conflicts
-import { idlFactory } from '../../../src/declarations/login_backend';
-import type { User, LoginError, _SERVICE } from '../../../src/declarations/login_backend/login_backend.did';
+import { idlFactory } from '../declarations/login_backend';
+import type { User, LoginError, _SERVICE } from '../declarations/login_backend/login_backend.did';
 
 export interface AuthResponse {
   user: User;
@@ -37,8 +37,8 @@ export class LoginService {
     }
 
     const isLocal = import.meta.env.DFX_NETWORK === "local";
-    const host = isLocal ? "http://127.0.0.1:4943" : "https://ic0.app";
-
+    const host = isLocal ? window.location.origin : "https://ic0.app";
+    
     const agent = new HttpAgent({
       identity: this.authClient.getIdentity(),
       host,

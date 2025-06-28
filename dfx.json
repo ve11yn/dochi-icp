@@ -36,6 +36,10 @@
       "packtool": ""
     }
   },
+  "declarations": {
+    "output": "dochi_frontend/src/declarations",
+    "node_compatibility": true
+  },
   "networks": {
     "local": {
       "bind": "127.0.0.1:4943",
