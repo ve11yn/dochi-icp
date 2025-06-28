@@ -1,0 +1,102 @@
+type UpdateTodoRequest = 
+ record {
+   completed: opt bool;
+   description: opt text;
+   id: nat;
+   priority: opt Priority;
+   tags: opt vec text;
+   title: opt text;
+ };
+type TodoItem = 
+ record {
+   completed: bool;
+   createdAt: int;
+   description: text;
+   id: nat;
+   priority: Priority;
+   subtasks: vec Subtask;
+   tags: vec text;
+   title: text;
+   updatedAt: int;
+ };
+type Subtask = 
+ record {
+   completed: bool;
+   id: nat;
+   "text": text;
+ };
+type Result_2 = 
+ variant {
+   err: text;
+   ok;
+ };
+type Result_1 = 
+ variant {
+   err: text;
+   ok: Note;
+ };
+type Result = 
+ variant {
+   err: text;
+   ok: TodoItem;
+ };
+type Priority = 
+ variant {
+   High;
+   Low;
+   Medium;
+ };
+type Note = 
+ record {
+   createdAt: int;
+   description: text;
+   id: nat;
+   tags: vec text;
+   title: text;
+   updatedAt: int;
+ };
+type CreateTodoRequest = 
+ record {
+   description: text;
+   priority: Priority;
+   subtasks: vec text;
+   tags: vec text;
+   title: text;
+ };
+type CreateNoteRequest = 
+ record {
+   description: text;
+   tags: vec text;
+   title: text;
+ };
+service : {
+  addSubtask: (todoId: nat, subtaskText: text) -> (Result);
+  createNote: (request: CreateNoteRequest) -> (Result_1);
+  createTodo: (request: CreateTodoRequest) -> (Result);
+  deleteNote: (id: nat) -> (Result_2);
+  deleteTodo: (id: nat) -> (Result_2);
+  getAllNotes: () -> (vec Note) query;
+  getAllTodos: () -> (vec TodoItem) query;
+  getCompletedTodos: () -> (vec TodoItem) query;
+  getNote: (id: nat) -> (opt Note) query;
+  getNotesByTag: (tag: text) -> (vec Note) query;
+  getPendingTodos: () -> (vec TodoItem) query;
+  getStats: () ->
+   (record {
+      completedSubtasks: nat;
+      completedTodos: nat;
+      pendingTodos: nat;
+      totalNotes: nat;
+      totalSubtasks: nat;
+      totalTodos: nat;
+    }) query;
+  getTodo: (id: nat) -> (opt TodoItem) query;
+  getTodosByPriority: (priority: Priority) -> (vec TodoItem) query;
+  getTodosByTag: (tag: text) -> (vec TodoItem) query;
+  searchNotes: (searchText: text) -> (vec Note) query;
+  searchTodos: (searchText: text) -> (vec TodoItem) query;
+  toggleSubtask: (todoId: nat, subtaskId: nat) -> (Result);
+  updateNote: (id: nat, title: opt text, description: opt text, tags:
+   opt vec text) -> (Result_1);
+  updateTodo: (request: UpdateTodoRequest) -> (Result);
+}

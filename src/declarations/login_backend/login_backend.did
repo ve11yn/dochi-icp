@@ -1,0 +1,47 @@
+type User = 
+ record {
+   createdAt: int;
+   name: text;
+   "principal": text;
+ };
+type Result_2 = 
+ variant {
+   err: LoginError;
+   ok: bool;
+ };
+type Result_1 = 
+ variant {
+   err: LoginError;
+   ok: AuthResponse;
+ };
+type Result = 
+ variant {
+   err: LoginError;
+   ok: User;
+ };
+type LoginError = 
+ variant {
+   AlreadyExists;
+   InvalidInput;
+   NotAuthorized;
+   NotFound;
+ };
+type AuthResponse = 
+ record {
+   isFirstTime: bool;
+   user: User;
+ };
+service : {
+  checkUserExists: () -> (opt User);
+  createUserProfile: (name: text) -> (Result);
+  deleteUserProfile: () -> (Result_2);
+  getLoginStats: () -> (record {
+                          canisterMemory: nat;
+                          totalUsers: nat;
+                        }) query;
+  getMyProfile: () -> (opt User);
+  getUserProfile: ("principal": principal) -> (opt User) query;
+  healthCheck: () -> (text) query;
+  loginUser: () -> (Result_1);
+  updateUserProfile: (name: text) -> (Result);
+}
