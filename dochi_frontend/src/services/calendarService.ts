@@ -2,6 +2,8 @@
 import { Actor, HttpAgent, Identity } from '@dfinity/agent';
 import { AuthClient } from '@dfinity/auth-client';
 import { Principal } from '@dfinity/principal';
+import { idlFactory } from '../../../src/declarations/calendar_backend'; // Adjust path if needed
+import { _SERVICE } from '../../../src/declarations/calendar_backend/calendar_backend.did';
 
 // Type definitions matching your frontend
 export interface Appointment {

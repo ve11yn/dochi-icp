@@ -21,6 +21,7 @@ export default defineConfig(({ mode }) => {
       // Expose your canister IDs to the frontend code
       'import.meta.env.VITE_LOGIN_CANISTER_ID': JSON.stringify(env.CANISTER_ID_LOGIN_BACKEND),
       'import.meta.env.VITE_INTERNET_IDENTITY_CANISTER_ID': JSON.stringify(env.CANISTER_ID_INTERNET_IDENTITY),
+      'import.meta.env.VITE_CALENDAR_CANISTER_ID': JSON.stringify(env.CANISTER_ID_CALENDAR_BACKEND),
       global: 'globalThis',
     },
     
@@ -52,7 +53,7 @@ export default defineConfig(({ mode }) => {
         '/api': {
           target: 'http://127.0.0.1:4943',
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api/, ''),
+          // rewrite: (path) => path.replace(/^\/api/, ''),
           secure: false
         },
       }

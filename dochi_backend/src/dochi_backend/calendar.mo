@@ -1,3 +1,5 @@
+// File: dochi_backend/src/dochi_backend/calendar.mo
+
 import Time "mo:base/Time";
 import Text "mo:base/Text";
 import Array "mo:base/Array";
@@ -10,6 +12,8 @@ import Int "mo:base/Int";
 import Option "mo:base/Option";
 import Buffer "mo:base/Buffer";
 import Order "mo:base/Order";
+// THIS IMPORT IS REQUIRED FOR THE FIX
+import Nat32 "mo:base/Nat32";
 
 actor CalendarBackend {
     // Type definitions
@@ -65,7 +69,8 @@ actor CalendarBackend {
     private stable var userProfilesEntries: [(UserId, UserProfile)] = [];
     
     // HashMaps for efficient lookups
-    private var appointments = HashMap.HashMap<AppointmentId, Appointment>(0, Nat.equal, Nat.hash);
+    // <<< FIX #1: Replaced Nat.hash with Nat32.fromNat >>>
+    private var appointments = HashMap.HashMap<AppointmentId, Appointment>(0, Nat.equal, Nat32.fromNat);
     private var userProfiles = HashMap.HashMap<UserId, UserProfile>(0, Principal.equal, Principal.hash);
     
     // System upgrade hooks
@@ -75,11 +80,12 @@ actor CalendarBackend {
     };
     
     system func postupgrade() {
+        // <<< FIX #2: Replaced Nat.hash with Nat32.fromNat >>>
         appointments := HashMap.fromIter<AppointmentId, Appointment>(
             appointmentsEntries.vals(), 
             appointmentsEntries.size(), 
             Nat.equal, 
-            Nat.hash
+            Nat32.fromNat
         );
         userProfiles := HashMap.fromIter<UserId, UserProfile>(
             userProfilesEntries.vals(), 
