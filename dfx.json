@@ -13,10 +13,14 @@
       "type": "motoko",
       "main": "dochi_backend/src/dochi_backend/todo.mo"
     },
+    "focus_backend": {
+      "type": "motoko",
+      "main": "dochi_backend/src/dochi_backend/focus.mo"
+    },
     "dochi_frontend": {
       "type": "assets",
       "source": ["dochi_frontend/dist/"],
-      "dependencies": ["dochi_backend", "todo_backend", "login_backend"]
+      "dependencies": ["dochi_backend", "todo_backend", "login_backend", "focus_backend"]
     },
     "internet_identity": {
       "type": "custom",

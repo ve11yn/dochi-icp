@@ -2,6 +2,7 @@ import Header from "./header";
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, Music, RotateCcw, Pause, Play } from 'lucide-react';
 import Dochi from "./dochi";
+import { addFocusTime, getTodayDate } from '../services/focusServices';
 
 // Import the focus session context
 const useFocusSession = () => {
@@ -44,76 +45,76 @@ const Focus: React.FC = () => {
     "Your dedication is inspiring!",
   ];
 
- const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
- const [oscillator, setOscillator] = useState<OscillatorNode | null>(null);
+  const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
+  const [oscillator, setOscillator] = useState<OscillatorNode | null>(null);
 
- useEffect(() => {
-   if (musicEnabled && sessionState === "running") {
-     if (!audioContext) {
-       const ctx = new (window.AudioContext ||
-         (window as any).webkitAudioContext)();
-       setAudioContext(ctx);
+  useEffect(() => {
+    if (musicEnabled && sessionState === "running") {
+      if (!audioContext) {
+        const ctx = new (window.AudioContext ||
+          (window as any).webkitAudioContext)();
+        setAudioContext(ctx);
 
-       // Create pink noise (calming sound)
-       const bufferSize = ctx.sampleRate * 2;
-       const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-       const data = buffer.getChannelData(0);
+        // Create pink noise (calming sound)
+        const bufferSize = ctx.sampleRate * 2;
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
 
-       let b0 = 0,
-         b1 = 0,
-         b2 = 0,
-         b3 = 0,
-         b4 = 0,
-         b5 = 0,
-         b6 = 0;
-       for (let i = 0; i < bufferSize; i++) {
-         const white = Math.random() * 2 - 1;
-         b0 = 0.99886 * b0 + white * 0.0555179;
-         b1 = 0.99332 * b1 + white * 0.0750759;
-         b2 = 0.969 * b2 + white * 0.153852;
-         b3 = 0.8665 * b3 + white * 0.3104856;
-         b4 = 0.55 * b4 + white * 0.5329522;
-         b5 = -0.7616 * b5 - white * 0.016898;
-         data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
-         b6 = white * 0.115926;
-       }
+        let b0 = 0,
+          b1 = 0,
+          b2 = 0,
+          b3 = 0,
+          b4 = 0,
+          b5 = 0,
+          b6 = 0;
+        for (let i = 0; i < bufferSize; i++) {
+          const white = Math.random() * 2 - 1;
+          b0 = 0.99886 * b0 + white * 0.0555179;
+          b1 = 0.99332 * b1 + white * 0.0750759;
+          b2 = 0.969 * b2 + white * 0.153852;
+          b3 = 0.8665 * b3 + white * 0.3104856;
+          b4 = 0.55 * b4 + white * 0.5329522;
+          b5 = -0.7616 * b5 - white * 0.016898;
+          data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
+          b6 = white * 0.115926;
+        }
 
-       const source = ctx.createBufferSource();
-       source.buffer = buffer;
-       source.loop = true;
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        source.loop = true;
 
-       const gainNode = ctx.createGain();
-       gainNode.gain.value = 0.1;
+        const gainNode = ctx.createGain();
+        gainNode.gain.value = 0.1;
 
-       source.connect(gainNode);
-       gainNode.connect(ctx.destination);
-       source.start();
+        source.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        source.start();
 
-       audioRef.current = source as any;
-     }
-   } else if (audioRef.current && audioContext) {
-     (audioRef.current as AudioBufferSourceNode).stop();
-     audioContext.close();
-     setAudioContext(null);
-     audioRef.current = null;
-   }
- }, [musicEnabled, sessionState, audioContext]);
- // Add this useEffect after your existing useEffects
-    useEffect(() => {
+        audioRef.current = source as any;
+      }
+    } else if (audioRef.current && audioContext) {
+      (audioRef.current as AudioBufferSourceNode).stop();
+      audioContext.close();
+      setAudioContext(null);
+      audioRef.current = null;
+    }
+  }, [musicEnabled, sessionState, audioContext]);
+  // Add this useEffect after your existing useEffects
+  useEffect(() => {
     return () => {
-        // Cleanup when component unmounts (page navigation)
-        if (audioRef.current && audioContext) {
+      // Cleanup when component unmounts (page navigation)
+      if (audioRef.current && audioContext) {
         try {
-            (audioRef.current as AudioBufferSourceNode).stop();
+          (audioRef.current as AudioBufferSourceNode).stop();
         } catch (e) {
-            // Source might already be stopped
+          // Source might already be stopped
         }
         audioContext.close();
         setAudioContext(null);
         audioRef.current = null;
-        }
+      }
     };
-    }, [audioContext]);
+  }, [audioContext]);
   // Update time when duration changes
   useEffect(() => {
     if (sessionState === "idle") {
@@ -166,6 +167,43 @@ const Focus: React.FC = () => {
     }
   }, [timeLeft, sessionState, originalTime]);
 
+  // Update your timer completion in the useEffect
+  useEffect(() => {
+    if (sessionState === "running") {
+      intervalRef.current = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            setSessionState("completed");
+            playCompletionSound();
+
+            // Save focus time to IC
+            const today = getTodayDate();
+            addFocusTime(today, selectedDuration).then((success) => {
+              if (success) {
+                console.log("Focus session saved to IC!");
+              } else {
+                console.error("Failed to save to IC");
+              }
+            });
+
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [sessionState, selectedDuration]);
+
   const playCompletionSound = () => {
     // Create a simple beep sound using Web Audio API
     const audioContext = new (window.AudioContext ||
@@ -190,20 +228,20 @@ const Focus: React.FC = () => {
   };
 
   // Replace your music button onClick with this function
-    const handleMusicToggle = () => {
+  const handleMusicToggle = () => {
     if (musicEnabled && audioRef.current && audioContext) {
-        // Stop current audio before toggling
-        try {
+      // Stop current audio before toggling
+      try {
         (audioRef.current as AudioBufferSourceNode).stop();
-        } catch (e) {
+      } catch (e) {
         // Source might already be stopped
-        }
-        audioContext.close();
-        setAudioContext(null);
-        audioRef.current = null;
+      }
+      audioContext.close();
+      setAudioContext(null);
+      audioRef.current = null;
     }
     setMusicEnabled(!musicEnabled);
-    };
+  };
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -495,7 +533,6 @@ const Focus: React.FC = () => {
       </div>
     </div>
   );
-
 }
 
 export default Focus;
