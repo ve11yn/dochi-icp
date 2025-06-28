@@ -1,13 +1,12 @@
 import Array "mo:base/Array";
 import Time "mo:base/Time";
 import Text "mo:base/Text";
-import Char "mo:base/Char";  // Added missing import
+import Char "mo:base/Char";
 import Result "mo:base/Result";
 import HashMap "mo:base/HashMap";
 import Iter "mo:base/Iter";
 import Option "mo:base/Option";
 import Nat32 "mo:base/Nat32";
-import Char "mo:base/Char";
 
 actor TodoNotesBackend {
     
@@ -363,6 +362,7 @@ actor TodoNotesBackend {
     };
 
     // Statistics
+    // Statistics
     public query func getStats() : async {
         totalTodos: Nat;
         completedTodos: Nat;
@@ -377,9 +377,11 @@ actor TodoNotesBackend {
         var totalSubtasks = 0;
         var completedSubtasks = 0;
         
-        for (todo in allTodos.vals()) {
+        // CORRECTED: Explicitly get an iterator from the array using Array.vals()
+        for (todo in Array.vals(allTodos)) {
             totalSubtasks += todo.subtasks.size();
-            for (subtask in todo.subtasks.vals()) {
+            // CORRECTED: Explicitly get an iterator from the subtasks array as well
+            for (subtask in Array.vals(todo.subtasks)) {
                 if (subtask.completed) {
                     completedSubtasks += 1;
                 };
@@ -417,13 +419,15 @@ actor TodoNotesBackend {
 
     public query func searchNotes(searchText: Text) : async [Note] {
         let allNotes = Iter.toArray(notes.vals());
-        let lowerQuery = toLowercase(query);
+        // Corrected bug: Used the function argument 'searchText' instead of undefined 'query'
+        let lowerQuery = toLowercase(searchText);
         
+        // Corrected bug: Removed the trailing semicolon ';' to ensure the array is returned
         Array.filter<Note>(allNotes, func(note: Note): Bool {
             let lowerTitle = toLowercase(note.title);
             let lowerDesc = toLowercase(note.description);
             
             Text.contains(lowerTitle, #text lowerQuery) or Text.contains(lowerDesc, #text lowerQuery)
-        });
+        })
     };
 }
