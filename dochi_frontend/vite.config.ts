@@ -53,7 +53,6 @@ export default defineConfig(({ mode }) => {
         '/api': {
           target: 'http://127.0.0.1:4943',
           changeOrigin: true,
-          // rewrite: (path) => path.replace(/^\/api/, ''),
           secure: false
         },
       }

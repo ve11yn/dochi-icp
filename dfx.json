@@ -1,5 +1,6 @@
 {
   "version": 1,
+  "dfx": "0.27.0",
   "canisters": {
     "dochi_backend": {
       "type": "motoko",

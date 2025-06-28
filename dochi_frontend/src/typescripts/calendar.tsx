@@ -139,13 +139,13 @@ export default function DochiCalendar() {
   // NEW: useEffect to fetch data on component mount
   useEffect(() => {
     const fetchInitialData = async () => {
-      const isAuthenticated = await loginService.isAuthenticated();
-      if (!isAuthenticated) {
-        setError("Please log in to use the calendar.");
-        setIsLoading(false);
-        // Consider redirecting to login page here
-        return;
-      }
+      // const isAuthenticated = await loginService.isAuthenticated();
+      // if (!isAuthenticated) {
+      //   setError("Please log in to use the calendar.");
+      //   setIsLoading(false);
+      //   // Consider redirecting to login page here
+      //   return;
+      // }
       
       try {
         setIsLoading(true);
