@@ -3,8 +3,8 @@ import { AuthClient } from '@dfinity/auth-client';
 import { Actor, HttpAgent, ActorSubclass } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
 // Corrected import: Alias idlFactory for clarity and to avoid type conflicts
-import { idlFactory } from '../declarations/login_backend';
-import type { User, LoginError, _SERVICE } from '../declarations/login_backend/login_backend.did';
+import { idlFactory } from '../../../src/declarations/login_backend';
+import type { User, LoginError, _SERVICE } from '../../../src/declarations/login_backend/login_backend.did';
 
 export interface AuthResponse {
   user: User;
