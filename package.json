@@ -1,0 +1,31 @@
+{
+  "name": "dochi-icp",
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "cd src/dochi_frontend && npm run dev",
+    "build": "cd src/dochi_frontend && npm run build",
+    "preview": "cd src/dochi_frontend && npm run preview",
+    "deploy": "dfx deploy",
+    "deploy:local": "dfx deploy --network local",
+    "deploy:ic": "dfx deploy --network ic"
+  },
+  "dependencies": {
+    "@dfinity/agent": "^2.4.1",
+    "@dfinity/auth-client": "^2.4.1",
+    "@dfinity/candid": "^2.4.1",
+    "@dfinity/principal": "^2.4.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.8.1",
+    "lucide-react": "^0.263.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.27",
+    "@types/react-dom": "^18.0.10",
+    "@vitejs/plugin-react": "^3.1.0",
+    "@tailwindcss/vite": "^4.0.0",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^4.9.4",
+    "vite": "^4.1.0"
+  }
+}

@@ -1,5 +1,6 @@
 // Login.tsx
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Dochi from './dochi';
 import { loginService } from '../services/loginService';
 import NameModal from './name-modal'; // Import the actual NameModal component
@@ -8,10 +9,11 @@ import NameModal from './name-modal'; // Import the actual NameModal component
 interface User {
   name: string;
   principal: string;
-  createdAt: number;
+  createdAt: bigint;
 }
 
 const Login: React.FC = () => {
+  const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
   const [showNameModal, setShowNameModal] = useState<boolean>(false);
@@ -56,6 +58,8 @@ const Login: React.FC = () => {
           setShowNameModal(true);
         } else {
           setUser(result.user!);
+          // Redirect to todo page after successful login
+          navigate('/toDo');
         }
       } else {
         setError(result.error || "Login failed");
@@ -89,6 +93,8 @@ const Login: React.FC = () => {
         setUser(result.user);
         setShowNameModal(false);
         setUserName("");
+        // Redirect to todo page after profile creation
+        navigate('/toDo');
       } else {
         setError(result.error || "Failed to create profile");
         console.error("Profile creation failed:", result.error);
@@ -195,7 +201,7 @@ const Login: React.FC = () => {
             </p>
             {user && (
               <p className="text-gray-500 text-sm mb-8">
-                Member since: {new Date(user.createdAt).toLocaleDateString()}
+                Member since: {new Date(Number(user.createdAt)).toLocaleDateString()}
               </p>
             )}
             <button

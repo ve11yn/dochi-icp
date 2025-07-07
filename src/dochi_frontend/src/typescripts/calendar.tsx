@@ -21,13 +21,10 @@ import {
 } from "lucide-react"
 import React, { useState, useEffect, useMemo, useRef } from "react"
 import Header from "./header"
-
-// NEW: Import the services
 import { calendarService, Appointment, Category } from '../services/calendarService';
 import { loginService } from "../services/loginService"
 
 
-// --- Helper function to format dates as YYYY-MM-DD ---
 const formatDate = (date: Date): string => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -35,7 +32,6 @@ const formatDate = (date: Date): string => {
     return `${year}-${month}-${day}`;
 };
 
-// --- Create dynamic date for initial state ---
 const today = new Date();
 
 function PageContent({ title }: { title:string }) {
@@ -46,12 +42,69 @@ function PageContent({ title }: { title:string }) {
   )
 }
 
-const CreationForm = ({
-    newAptTitle, setNewAptTitle, appointmentCategories, newAptCategory, setNewAptCategory,
-    isDeletingCategory, handleDeleteCategory, isAddingCategory, setIsAddingCategory,
-    toggleDeleteMode, newCategoryName, setNewCategoryName, newCategoryColor, setNewCategoryColor,
-    handleAddNewCategory, newAptStartTime, setNewAptStartTime, newAptEndTime, setNewAptEndTime,
-    handleSaveNewAppointment, setCreationDropdown, setEditingAppointmentId, setIsCreatingInDropdown
+
+interface Categories {
+  name: string;
+  color: string;
+  textColor: string;
+}
+
+interface CreationFormProps {
+  newAptTitle: string;
+  setNewAptTitle: (title: string) => void;
+  newAptCategory: string;
+  setNewAptCategory: (category: string) => void;
+  newAptStartTime: string;
+  setNewAptStartTime: (time: string) => void;
+  newAptEndTime: string;
+  setNewAptEndTime: (time: string) => void;
+
+  appointmentCategories: Categories[];
+  
+  isDeletingCategory: boolean;
+  isAddingCategory: boolean;
+  setIsAddingCategory: (adding: boolean) => void;
+  newCategoryName: string;
+  setNewCategoryName: (name: string) => void;
+  newCategoryColor: string;
+  setNewCategoryColor: (color: string) => void;
+
+  handleDeleteCategory: (categoryName: string) => void;
+  toggleDeleteMode: () => void;
+  handleAddNewCategory: () => void;
+
+  handleSaveNewAppointment: () => void;
+  setCreationDropdown: (dropdown: any) => void;
+  setEditingAppointmentId: (id: number | null) => void;
+  setIsCreatingInDropdown: (creating: boolean) => void;
+}
+
+
+
+const CreationForm: React.FC<CreationFormProps> = ({
+  newAptTitle, 
+  setNewAptTitle, 
+  appointmentCategories, 
+  newAptCategory, 
+  setNewAptCategory,
+  isDeletingCategory, 
+  handleDeleteCategory, 
+  isAddingCategory, 
+  setIsAddingCategory,
+  toggleDeleteMode, 
+  newCategoryName, 
+  setNewCategoryName, 
+  newCategoryColor, 
+  setNewCategoryColor,
+  handleAddNewCategory, 
+  newAptStartTime, 
+  setNewAptStartTime, 
+  newAptEndTime, 
+  setNewAptEndTime,
+  handleSaveNewAppointment, 
+  setCreationDropdown, 
+  setEditingAppointmentId, 
+  setIsCreatingInDropdown
 }) => (
     <div className="p-2.5 pt-2">
         <div className="space-y-2 p-1">
@@ -139,13 +192,13 @@ export default function DochiCalendar() {
   // NEW: useEffect to fetch data on component mount
   useEffect(() => {
     const fetchInitialData = async () => {
-      // const isAuthenticated = await loginService.isAuthenticated();
-      // if (!isAuthenticated) {
-      //   setError("Please log in to use the calendar.");
-      //   setIsLoading(false);
-      //   // Consider redirecting to login page here
-      //   return;
-      // }
+      const isAuthenticated = await loginService.isAuthenticated();
+      if (!isAuthenticated) {
+        setError("Please log in to use the calendar.");
+        setIsLoading(false);
+        // Consider redirecting to login page here
+        return;
+      }
       
       try {
         setIsLoading(true);
@@ -476,7 +529,7 @@ export default function DochiCalendar() {
     });
   };
 
-  const AppointmentListPopover = ({date}) => {
+  const AppointmentListPopover = ({ date }: { date: string }) => {
       const dayAppointments = appointments[date] || [];
       const creationFormProps = {
         newAptTitle, setNewAptTitle, appointmentCategories, newAptCategory, setNewAptCategory,

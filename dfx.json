@@ -4,27 +4,29 @@
   "canisters": {
     "dochi_backend": {
       "type": "motoko",
-      "main": "dochi_backend/src/dochi_backend/main.mo"
+      "main": "src/dochi_backend/main.mo"
     },
     "login_backend": {
       "type": "motoko",
-      "main": "dochi_backend/src/dochi_backend/login.mo"
+      "main": "src/dochi_backend/login.mo"
     },
     "todo_backend": {
       "type": "motoko",
-      "main": "dochi_backend/src/dochi_backend/todo.mo"
+      "main": "src/dochi_backend/todo.mo"
     },
     "focus_backend": {
       "type": "motoko",
-      "main": "dochi_backend/src/dochi_backend/focus.mo"
+      "main": "src/dochi_backend/focus.mo"
     },
     "calendar_backend": {
       "type": "motoko",
-      "main": "dochi_backend/src/dochi_backend/calendar.mo"
+      "main": "src/dochi_backend/calendar.mo"
     },
     "dochi_frontend": {
       "type": "assets",
-      "source": ["dochi_frontend/dist/"],
+      "source": ["src/dochi_frontend/dist/"],
+      "dev": ["cd src/dochi_frontend && npm run dev"],
+      "build": ["cd src/dochi_frontend && npm run build"],
       "dependencies": ["dochi_backend", "todo_backend", "login_backend", "focus_backend", "calendar_backend"]
     },
     "internet_identity": {
@@ -32,6 +34,7 @@
       "candid": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity.did",
       "wasm": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity_dev.wasm.gz",
       "shrink": false,
+      "specified_id": "rdmx6-jaaaa-aaaaa-aaadq-cai",
       "remote": {
         "id": {
           "ic": "rdmx6-jaaaa-aaaaa-aaadq-cai"
@@ -59,5 +62,5 @@
       "type": "persistent"
     }
   },
-  "output_env_file": "dochi_frontend/.env"
+  "output_env_file": "src/dochi_frontend/.env"
 }

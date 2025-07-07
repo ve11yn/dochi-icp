@@ -1,7 +1,8 @@
 import Header from "./header";
 import Dochi from "./dochi";
 import { Link, CheckCheck, TrendingUp, ChevronLeft, ChevronRight, Clock, CalendarDays, Target } from 'lucide-react';
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import { profileService, UserProfileData } from '../services/profileService';
 
 // --- Helper Functions for Date Manipulations ---
 
@@ -134,7 +135,32 @@ const StatusCard = ({ icon: Icon, value, title, subtitle, percentage, color: fix
 
 
 const Profile = () => {
-    // --- MOCK REAL-TIME DATA ---
+    // --- REAL USER DATA STATE ---
+    const [profileData, setProfileData] = useState<UserProfileData>({
+        user: null,
+        totalAppointments: 0,
+        upcomingAppointments: 0,
+        completedAppointments: 0,
+        categories: 0,
+        totalFocusTime: 0,
+        focusSessionsCount: 0,
+        averageFocusTime: 0,
+        bestFocusDay: null,
+        memberSince: '',
+        isLoading: true,
+        error: null
+    });
+
+    // Fetch user data on component mount
+    useEffect(() => {
+        const fetchProfileData = async () => {
+            const data = await profileService.getUserProfileData();
+            setProfileData(data);
+        };
+        fetchProfileData();
+    }, []);
+
+    // --- MOCK REAL-TIME DATA (keeping for charts) ---
     const allTimeTaskData = useMemo(() => [
         { date: '2025-05-27', value: 2 }, { date: '2025-05-28', value: 4 }, { date: '2025-05-29', value: 1 },
         { date: '2025-06-02', value: 3 }, { date: '2025-06-03', value: 5 }, { date: '2025-06-04', value: 2 },
@@ -235,6 +261,35 @@ const Profile = () => {
         .filter(task => new Date(task.date).getFullYear() === currentYear)
         .reduce((sum, task) => sum + task.value, 0);
 
+    // Show loading state if data is still being fetched
+    if (profileData.isLoading) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-orange-50 to-yellow-50 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading your profile...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Show error state if there was an error
+    if (profileData.error) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-orange-50 to-yellow-50 flex items-center justify-center">
+                <div className="text-center">
+                    <p className="text-red-600 mb-4">Error: {profileData.error}</p>
+                    <button 
+                        onClick={() => window.location.reload()} 
+                        className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600"
+                    >
+                        Retry
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     const statusData = [
         { icon: CheckCheck, value: tasksDoneThisWeek.toString(), title: "Tasks Done", subtitle: `of ${weeklyGoal} this week`, percentage: tasksDonePercentage },
         { icon: Link, value: dayStreak.toString(), title: "Day Streak", subtitle: "current streak", color: { bg: '#EFF6FF', iconBg: '#DBEAFE', icon: '#3B82F6', text: '#1E40AF', subtext: '#1D4ED8' } },
@@ -289,7 +344,9 @@ const Profile = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-1 h-full">
                         <div className="bg-white p-6 rounded-xl border border-gray-200/80 shadow-sm flex flex-col h-full">
-                            <h2 className="text-xl font-semibold text-gray-800 text-center">Hi, Username!</h2>
+                            <h2 className="text-xl font-semibold text-gray-800 text-center">
+                                Hi, {profileData.user?.name || 'Loading...'}!
+                            </h2>
                             <div className="flex justify-center items-center my-4">
                                <div className="animated-gradient-border-wrapper">
                                     <div className="dochi-container">
@@ -301,7 +358,7 @@ const Profile = () => {
                                 <div className="w-6 h-6 rounded-full flex items-center justify-center bg-gradient-to-br from-purple-400 to-pink-500">
                                     <Link className="text-white" size={12} />
                                 </div>
-                                <span className="text-md font-bold text-gray-700">4</span>
+                                <span className="text-md font-bold text-gray-700">{profileData.categories}</span>
                             </div>
 
                             <div className="mt-6 space-y-3">

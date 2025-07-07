@@ -45,9 +45,6 @@ const ToDo: React.FC = () => {
   const [editingTodo, setEditingTodo] = useState<number | null>(null);
   const [editingNote, setEditingNote] = useState<number | null>(null);
 
-  const handleNavClick = (page: string): void => {
-    setActiveSection(page);
-  };
 
   // Predefined tags and colors
   const predefinedTags: string[] = [
@@ -57,6 +54,7 @@ const ToDo: React.FC = () => {
 
   const noteColors: string[] = ['#D8F1F8', '#F9EBF7', '#E0EAFA', '#FBF1ED'];
   const todoColors: string[] = ['#FFFFFF', '#D8F1F8', '#F9EBF7', '#E0EAFA', '#FBF1ED'];
+
 
   const priorities: Array<'Low' | 'Medium' | 'High'> = ['Low', 'Medium', 'High'];
   const priorityColors: Record<'Low' | 'Medium' | 'High', string> = {
@@ -343,7 +341,7 @@ const ToDo: React.FC = () => {
                       className="flex-1 text-sm border-b border-gray-300 focus:border-blue-500 focus:outline-none"
                       onClick={(e) => e.stopPropagation()}
                       onFocus={(e) => e.stopPropagation()}
-                      onKeyPress={(e) => {
+                      onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           addSubtask(todo.id, newSubtaskText);
                           setNewSubtaskText('');

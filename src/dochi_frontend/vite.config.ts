@@ -18,10 +18,14 @@ export default defineConfig(({ mode }) => {
     define: {
       // Expose DFX_NETWORK to the application
       'process.env.DFX_NETWORK': JSON.stringify(env.DFX_NETWORK),
-      // Expose your canister IDs to the frontend code
-      'import.meta.env.VITE_LOGIN_CANISTER_ID': JSON.stringify(env.CANISTER_ID_LOGIN_BACKEND),
-      'import.meta.env.VITE_INTERNET_IDENTITY_CANISTER_ID': JSON.stringify(env.CANISTER_ID_INTERNET_IDENTITY),
-      'import.meta.env.VITE_CALENDAR_CANISTER_ID': JSON.stringify(env.CANISTER_ID_CALENDAR_BACKEND),
+      'process.env.NODE_ENV': JSON.stringify(mode),
+      // Expose all canister IDs to the frontend code
+      'process.env.CANISTER_ID_LOGIN_BACKEND': JSON.stringify(env.CANISTER_ID_LOGIN_BACKEND),
+      'process.env.CANISTER_ID_INTERNET_IDENTITY': JSON.stringify(env.CANISTER_ID_INTERNET_IDENTITY),
+      'process.env.CANISTER_ID_CALENDAR_BACKEND': JSON.stringify(env.CANISTER_ID_CALENDAR_BACKEND),
+      'process.env.CANISTER_ID_FOCUS_BACKEND': JSON.stringify(env.CANISTER_ID_FOCUS_BACKEND),
+      'process.env.CANISTER_ID_TODO_BACKEND': JSON.stringify(env.CANISTER_ID_TODO_BACKEND),
+      'process.env.CANISTER_ID_DOCHI_BACKEND': JSON.stringify(env.CANISTER_ID_DOCHI_BACKEND),
       global: 'globalThis',
     },
     

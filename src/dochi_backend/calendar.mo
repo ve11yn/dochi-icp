@@ -1,5 +1,3 @@
-// File: dochi_backend/src/dochi_backend/calendar.mo
-
 import Time "mo:base/Time";
 import Text "mo:base/Text";
 import Array "mo:base/Array";
@@ -8,11 +6,9 @@ import Iter "mo:base/Iter";
 import Result "mo:base/Result";
 import Principal "mo:base/Principal";
 import Nat "mo:base/Nat";
-import Int "mo:base/Int";
 import Option "mo:base/Option";
 import Buffer "mo:base/Buffer";
 import Order "mo:base/Order";
-// THIS IMPORT IS REQUIRED FOR THE FIX
 import Nat32 "mo:base/Nat32";
 
 actor CalendarBackend {
@@ -69,7 +65,6 @@ actor CalendarBackend {
     private stable var userProfilesEntries: [(UserId, UserProfile)] = [];
     
     // HashMaps for efficient lookups
-    // <<< FIX #1: Replaced Nat.hash with Nat32.fromNat >>>
     private var appointments = HashMap.HashMap<AppointmentId, Appointment>(0, Nat.equal, Nat32.fromNat);
     private var userProfiles = HashMap.HashMap<UserId, UserProfile>(0, Principal.equal, Principal.hash);
     
@@ -80,7 +75,6 @@ actor CalendarBackend {
     };
     
     system func postupgrade() {
-        // <<< FIX #2: Replaced Nat.hash with Nat32.fromNat >>>
         appointments := HashMap.fromIter<AppointmentId, Appointment>(
             appointmentsEntries.vals(), 
             appointmentsEntries.size(), 
@@ -119,21 +113,22 @@ actor CalendarBackend {
     };
     
     // Get user profile or create if not exists
-    public query func getUserProfile(userId: UserId): async UserProfile {
+    public shared(msg) func getUserProfile(userId: UserId): async UserProfile {
         switch (userProfiles.get(userId)) {
             case (?profile) { profile };
-            case null { 
-                {
-                    userId = userId;
-                    categories = getDefaultCategories();
-                    createdAt = Time.now();
-                }
-            };
+            case null { initializeUserProfile(userId) };
         }
     };
     
     // Category management
-    public func addCategory(userId: UserId, category: Category): async Result.Result<Text, Text> {
+    public shared(msg) func addCategory(userId: UserId, category: Category): async Result.Result<Text, Text> {
+        let caller = msg.caller;
+        
+        // Only allow users to manage their own categories
+        if (caller != userId) {
+            return #err("Unauthorized");
+        };
+        
         let profile = switch (userProfiles.get(userId)) {
             case (?p) { p };
             case null { initializeUserProfile(userId) };
@@ -156,7 +151,14 @@ actor CalendarBackend {
         #ok("Category added successfully")
     };
     
-    public func deleteCategory(userId: UserId, categoryName: Text): async Result.Result<Text, Text> {
+    public shared(msg) func deleteCategory(userId: UserId, categoryName: Text): async Result.Result<Text, Text> {
+        let caller = msg.caller;
+        
+        // Only allow users to manage their own categories
+        if (caller != userId) {
+            return #err("Unauthorized");
+        };
+        
         let profile = switch (userProfiles.get(userId)) {
             case (?p) { p };
             case null { return #err("User profile not found") };
@@ -184,7 +186,14 @@ actor CalendarBackend {
     };
     
     // Create appointment
-    public func createAppointment(userId: UserId, request: CreateAppointmentRequest): async Result.Result<Appointment, Text> {
+    public shared(msg) func createAppointment(userId: UserId, request: CreateAppointmentRequest): async Result.Result<Appointment, Text> {
+        let caller = msg.caller;
+        
+        // Only allow users to create their own appointments
+        if (caller != userId) {
+            return #err("Unauthorized");
+        };
+        
         let profile = switch (userProfiles.get(userId)) {
             case (?p) { p };
             case null { initializeUserProfile(userId) };
@@ -218,11 +227,13 @@ actor CalendarBackend {
     };
     
     // Update appointment
-    public func updateAppointment(userId: UserId, request: UpdateAppointmentRequest): async Result.Result<Appointment, Text> {
+    public shared(msg) func updateAppointment(userId: UserId, request: UpdateAppointmentRequest): async Result.Result<Appointment, Text> {
+        let caller = msg.caller;
+        
         switch (appointments.get(request.id)) {
             case (?appointment) {
-                // Check if user owns this appointment
-                if (appointment.userId != userId) {
+                // Check if user owns this appointment and is the caller
+                if (appointment.userId != userId or caller != userId) {
                     return #err("Unauthorized");
                 };
                 
@@ -266,10 +277,12 @@ actor CalendarBackend {
     };
     
     // Delete appointment
-    public func deleteAppointment(userId: UserId, appointmentId: AppointmentId): async Result.Result<Text, Text> {
+    public shared(msg) func deleteAppointment(userId: UserId, appointmentId: AppointmentId): async Result.Result<Text, Text> {
+        let caller = msg.caller;
+        
         switch (appointments.get(appointmentId)) {
             case (?appointment) {
-                if (appointment.userId != userId) {
+                if (appointment.userId != userId or caller != userId) {
                     return #err("Unauthorized");
                 };
                 appointments.delete(appointmentId);
@@ -337,10 +350,12 @@ actor CalendarBackend {
     };
     
     // Toggle appointment completion status
-    public func toggleAppointmentCompletion(userId: UserId, appointmentId: AppointmentId): async Result.Result<Appointment, Text> {
+    public shared(msg) func toggleAppointmentCompletion(userId: UserId, appointmentId: AppointmentId): async Result.Result<Appointment, Text> {
+        let caller = msg.caller;
+        
         switch (appointments.get(appointmentId)) {
             case (?appointment) {
-                if (appointment.userId != userId) {
+                if (appointment.userId != userId or caller != userId) {
                     return #err("Unauthorized");
                 };
                 
@@ -407,5 +422,10 @@ actor CalendarBackend {
         Array.sort(grouped, func(a: (Text, [Appointment]), b: (Text, [Appointment])): Order.Order {
             Text.compare(a.0, b.0)
         })
+    };
+
+    // Health check
+    public query func healthCheck() : async Text {
+        "Calendar canister is healthy. Appointments: " # debug_show(appointments.size()) # ", Profiles: " # debug_show(userProfiles.size())
     };
 }

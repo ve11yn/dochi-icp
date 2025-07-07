@@ -2,7 +2,7 @@ import Time "mo:base/Time";
 import HashMap "mo:base/HashMap";
 import Principal "mo:base/Principal";
 import Result "mo:base/Result";
-import Option "mo:base/Option";
+// REMOVED: Option import (was unused)
 import Debug "mo:base/Debug";
 import Iter "mo:base/Iter";
 import Text "mo:base/Text";
@@ -69,7 +69,7 @@ actor Login {
 
         // Check if user already exists
         switch (users.get(caller)) {
-            case (?existingUser) { #err(#AlreadyExists) };
+            case (?_existingUser) { #err(#AlreadyExists) }; // FIXED: Use wildcard for unused variable
             case null {
                 let newUser: User = {
                     name = Text.trim(name, #char ' ');
@@ -133,8 +133,8 @@ actor Login {
         users.get(principal)
     };
 
-    // Get current user's profile
-    public shared(msg) func getMyProfile() : async ?User {
+    // Get current user's profiles
+    public query(msg) func getMyProfile() : async ?User {
         let caller = msg.caller;
         users.get(caller)
     };
