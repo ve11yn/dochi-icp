@@ -1,11 +1,10 @@
-// Login.tsx
+// Login.tsx - Optimized but keeping your exact UI design
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Dochi from './dochi';
 import { loginService } from '../services/loginService';
-import NameModal from './name-modal'; // Import the actual NameModal component
+import NameModal from './name-modal';
 
-// Types
 interface User {
   name: string;
   principal: string;
@@ -28,12 +27,15 @@ const Login: React.FC = () => {
 
   const initializeAuth = async () => {
     try {
+      console.log('Initializing authentication...');
       await loginService.initialize();
       const isAuth = await loginService.isAuthenticated();
 
       if (isAuth) {
+        console.log('User is already authenticated, getting current user...');
         const currentUser = await loginService.getCurrentUser();
         if (currentUser) {
+          console.log('Current user found:', currentUser);
           setUser(currentUser);
           setIsAuthenticated(true);
         }
@@ -49,19 +51,24 @@ const Login: React.FC = () => {
     setError("");
 
     try {
+      console.log('Starting login process...');
       const result = await loginService.login();
+      console.log('Login result:', result);
 
       if (result.success) {
         setIsAuthenticated(true);
 
         if (result.isFirstTime) {
+          console.log('First time user, showing name modal');
           setShowNameModal(true);
         } else {
+          console.log('Returning user, setting user data');
           setUser(result.user!);
           // Redirect to todo page after successful login
           navigate('/toDo');
         }
       } else {
+        console.error('Login failed:', result.error);
         setError(result.error || "Login failed");
       }
     } catch (error) {
@@ -78,32 +85,36 @@ const Login: React.FC = () => {
       return;
     }
 
+    if (userName.trim().length > 50) {
+      setError("Name must be 50 characters or less");
+      return;
+    }
+
     setIsLoading(true);
     setError("");
 
     try {
       console.log("Creating profile with name:", userName.trim());
-
-      // Call the fixed createProfile method
+      
+      // Call the createProfile method
       const result = await loginService.createProfile(userName.trim());
-
       console.log("Create profile result:", result);
 
       if (result.success && result.user) {
+        console.log("Profile created successfully:", result.user);
         setUser(result.user);
         setShowNameModal(false);
         setUserName("");
         // Redirect to todo page after profile creation
         navigate('/toDo');
       } else {
-        setError(result.error || "Failed to create profile");
         console.error("Profile creation failed:", result.error);
+        setError(result.error || "Failed to create profile");
       }
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      setError(`Failed to create profile: ${errorMessage}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       console.error("Error creating profile:", error);
+      setError(`Failed to create profile: ${errorMessage}`);
     } finally {
       setIsLoading(false);
     }
@@ -111,12 +122,14 @@ const Login: React.FC = () => {
 
   const handleLogout = async () => {
     try {
+      console.log('Logging out...');
       await loginService.logout();
       setIsAuthenticated(false);
       setUser(null);
       setShowNameModal(false);
       setUserName('');
       setError('');
+      console.log('Logout successful');
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -124,7 +137,7 @@ const Login: React.FC = () => {
 
   return (
     <div className="relative h-screen overflow-hidden font-sans w-full m-0 p-0">
-      {/* Background */}
+      {/* Background - keeping your exact design */}
       <div
         className="fixed inset-0 z-0"
         style={{
@@ -137,19 +150,19 @@ const Login: React.FC = () => {
         <style
           dangerouslySetInnerHTML={{
             __html: `
-    @keyframes gradientShift {
-      0% { background-position: 0% 50%; }
-      25% { background-position: 100% 0%; }
-      50% { background-position: 100% 100%; }
-      75% { background-position: 0% 100%; }
-      100% { background-position: 0% 50%; }
-    }
-  `,
+              @keyframes gradientShift {
+                0% { background-position: 0% 50%; }
+                25% { background-position: 100% 0%; }
+                50% { background-position: 100% 100%; }
+                75% { background-position: 0% 100%; }
+                100% { background-position: 0% 50%; }
+              }
+            `,
           }}
         />
       </div>
 
-      {/* Floating Dochi Characters */}
+      {/* Floating Dochi Characters - keeping your exact animations */}
       <div
         className="absolute top-[10%] left-[7%] opacity-60"
         style={{
@@ -169,6 +182,7 @@ const Login: React.FC = () => {
 
       <div className="flex flex-col items-center justify-center h-screen p-5 relative z-10">
         {!isAuthenticated ? (
+          // Login screen - keeping your exact design
           <div className="text-center max-w-md w-full">
             <h1 className="text-6xl text-gray-800 mb-8 drop-shadow-sm font-extralight">
               <span className="font-semibold">Get</span> Started.
@@ -189,6 +203,7 @@ const Login: React.FC = () => {
             </button>
           </div>
         ) : (
+          // Authenticated screen - keeping your exact design
           <div className="text-center max-w-lg w-full bg-white bg-opacity-90 backdrop-blur-lg p-8 rounded-3xl shadow-lg">
             <div className="flex justify-center mb-6">
               <Dochi size={80} />
@@ -214,7 +229,7 @@ const Login: React.FC = () => {
         )}
       </div>
 
-      {/* Use the actual NameModal component */}
+      {/* Your exact NameModal component */}
       <NameModal
         showNameModal={showNameModal}
         userName={userName}
@@ -224,7 +239,7 @@ const Login: React.FC = () => {
         error={error}
       />
 
-      {/* Global animations */}
+      {/* Global animations - keeping your exact styles */}
       <style>{`
         @keyframes float {
           0%, 100% {
