@@ -2,7 +2,6 @@ import Header from "./header";
 import Dochi from "./dochi";
 import { Link, CheckCheck, TrendingUp, ChevronLeft, ChevronRight, Clock, CalendarDays, Target } from 'lucide-react';
 import React, { useState, useMemo, useEffect } from "react";
-import { profileService, UserProfileData } from '../services/profileService';
 
 // --- Helper Functions for Date Manipulations ---
 
