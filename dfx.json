@@ -18,12 +18,16 @@
       "type": "motoko",
       "main": "src/dochi_backend/focus.mo"
     },
+    "calendar_backend": {
+      "type": "motoko",
+      "main": "src/dochi_backend/calendar.mo"
+    },
     "dochi_frontend": {
       "type": "assets",
       "source": ["src/dochi_frontend/dist/"],
       "dev": ["cd src/dochi_frontend && npm run dev"],
       "build": ["cd src/dochi_frontend && npm run build"],
-      "dependencies": ["dochi_backend", "todo_backend", "login_backend", "focus_backend"]
+      "dependencies": ["dochi_backend", "todo_backend", "login_backend", "focus_backend", "calendar_backend"]
     },
     "internet_identity": {
       "type": "custom",
@@ -58,5 +62,6 @@
       "type": "persistent"
     }
   },
-  "output_env_file": "src/dochi_frontend/.env"
+  "output_env_file": "src/dochi_frontend/.env",
+  "output": "src/declarations"
 }
