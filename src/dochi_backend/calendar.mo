@@ -341,7 +341,9 @@ actor CalendarBackend {
                     };
                 };
                 
-                categories := Array.append(Array.freeze(categories), [newCategory]);
+                // Fix: Use Array.thaw to convert immutable array to mutable
+                let appendedCategories = Array.append(Array.freeze(categories), [newCategory]);
+                categories := Array.thaw(appendedCategories);
                 #ok(newCategory)
             };
         }
@@ -350,9 +352,16 @@ actor CalendarBackend {
     // Update a category
     public func updateCategory(name: Text, newName: ?Text, color: ?Text, textColor: ?Text): async Result.Result<Category, Text> {
         let categoryArray = Array.freeze(categories);
-        let index = Array.indexOf<Category>({ name = name; color = ""; textColor = "" }, categoryArray, func(a: Category, b: Category): Bool { a.name == b.name });
         
-        switch (index) {
+        // Find the index manually
+        var foundIndex: ?Nat = null;
+        for (i in categoryArray.keys()) {
+            if (categoryArray[i].name == name) {
+                foundIndex := ?i;
+            };
+        };
+        
+        switch (foundIndex) {
             case null { #err("Category not found") };
             case (?i) {
                 let oldCategory = categoryArray[i];
@@ -371,11 +380,11 @@ actor CalendarBackend {
                     };
                 };
                 
-                var newCategories = Array.tabulate<Category>(categoryArray.size(), func(j: Nat): Category {
+                // Fix: Array.tabulate returns immutable array, need to thaw it
+                let newCategoriesArray = Array.tabulate<Category>(categoryArray.size(), func(j: Nat): Category {
                     if (j == i) { updatedCategory } else { categoryArray[j] }
                 });
-                
-                categories := newCategories;
+                categories := Array.thaw(newCategoriesArray);
                 
                 // Update appointments with this category if name changed
                 switch (newName) {

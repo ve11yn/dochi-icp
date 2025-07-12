@@ -1,20 +1,29 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
-import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
 
 export default defineConfig(({ mode }) => {
   // Load env file based on the current mode (development, production)
-  // This is the standard Vite way to handle environment variables.
   const env = loadEnv(mode, process.cwd(), '');
 
   return {
     plugins: [
       react(),
-      tailwindcss()
     ],
-    
-    // Corrected define block
+
+    // Corrected resolve.alias block
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
+        '@declarations': path.resolve(__dirname, '../declarations'),
+        // Explicitly point to the DFINITY packages to solve resolution errors
+        '@dfinity/agent': path.resolve(__dirname, 'node_modules/@dfinity/agent'),
+        '@dfinity/auth-client': path.resolve(__dirname, 'node_modules/@dfinity/auth-client'),
+        '@dfinity/candid': path.resolve(__dirname, 'node_modules/@dfinity/candid'),
+        '@dfinity/principal': path.resolve(__dirname, 'node_modules/@dfinity/principal'),
+      }
+    },
+
     define: {
       // Expose DFX_NETWORK to the application
       'process.env.DFX_NETWORK': JSON.stringify(env.DFX_NETWORK),
@@ -28,14 +37,7 @@ export default defineConfig(({ mode }) => {
       'process.env.CANISTER_ID_DOCHI_BACKEND': JSON.stringify(env.CANISTER_ID_DOCHI_BACKEND),
       global: 'globalThis',
     },
-    
-    resolve: {
-      alias: {
-        '@': path.resolve(__dirname, './src'),
-        '@declarations': path.resolve(__dirname, './src/declarations')
-      }
-    },
-    
+
     optimizeDeps: {
       include: [
         '@dfinity/agent',
@@ -49,7 +51,7 @@ export default defineConfig(({ mode }) => {
         }
       }
     },
-    
+
     server: {
       host: 'localhost',
       port: 5173,

@@ -1,0 +1,84 @@
+type Result_2 = 
+ variant {
+   err: text;
+   ok: text;
+ };
+type Result_1 = 
+ variant {
+   err: text;
+   ok: Appointment;
+ };
+type Result = 
+ variant {
+   err: text;
+   ok: Category;
+ };
+type CategoryInput = 
+ record {
+   color: text;
+   name: text;
+   textColor: opt text;
+ };
+type Category = 
+ record {
+   color: text;
+   name: text;
+   textColor: text;
+ };
+type AppointmentUpdate = 
+ record {
+   category: opt text;
+   color: opt text;
+   completed: opt bool;
+   endTime: opt text;
+   startTime: opt text;
+   title: opt text;
+ };
+type AppointmentInput = 
+ record {
+   category: text;
+   color: opt text;
+   endTime: text;
+   startTime: text;
+   title: text;
+ };
+type Appointment = 
+ record {
+   category: text;
+   color: text;
+   completed: bool;
+   endTime: text;
+   id: nat;
+   startTime: text;
+   title: text;
+ };
+service : {
+  createAppointment: (date: text, appointment: AppointmentInput) ->
+   (Result_1);
+  createCategory: (category: CategoryInput) -> (Result);
+  deleteAppointment: (date: text, id: nat) -> (Result_2);
+  deleteCategory: (name: text) -> (Result_2);
+  getAppointments: () -> (vec record {
+                                text;
+                                vec Appointment;
+                              }) query;
+  getAppointmentsByDate: (date: text) -> (vec Appointment) query;
+  getAppointmentsByDateRange: (startDate: text, endDate: text) ->
+   (vec record {
+          text;
+          vec Appointment;
+        }) query;
+  getCategories: () -> (vec Category) query;
+  initializeSampleData: () -> (text);
+  moveAppointment: (oldDate: text, id: nat, newDate: text) -> (Result_1);
+  searchAppointments: (searchQuery: text) ->
+   (vec record {
+          appointment: Appointment;
+          date: text;
+        }) query;
+  toggleAppointmentComplete: (date: text, id: nat) -> (Result_1);
+  updateAppointment: (date: text, id: nat, updates: AppointmentUpdate) ->
+   (Result_1);
+  updateCategory: (name: text, newName: opt text, color: opt text, textColor:
+   opt text) -> (Result);
+}

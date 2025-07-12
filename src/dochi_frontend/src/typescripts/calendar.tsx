@@ -10,9 +10,11 @@ import {
   PlusCircle,
   Trash2,
   X,
+  Loader2
 } from "lucide-react";
 import React, { useState, useEffect, useMemo, useRef, memo, useCallback } from "react";
-import Header from "./header"; // Assuming Header component exists
+import Header from "./header";
+import { calendarService, Appointment, Category } from '../services/calendarServices'; // Import the service
 
 // --- Helper function to format dates as YYYY-MM-DD ---
 const formatDate = (date: Date): string => {
@@ -22,32 +24,9 @@ const formatDate = (date: Date): string => {
     return `${year}-${month}-${day}`;
 };
 
-// --- Create dynamic dates for appointments ---
 const today = new Date();
-const yesterday = new Date();
-yesterday.setDate(today.getDate() - 1);
-const tomorrow = new Date();
-tomorrow.setDate(today.getDate() + 1);
-const dayAfterTomorrow = new Date();
-dayAfterTomorrow.setDate(today.getDate() + 2);
 
 // --- Type Definitions ---
-interface Appointment {
-  id: number;
-  title: string;
-  startTime: string;
-  endTime: string;
-  color: string;
-  category: string;
-  completed: boolean;
-}
-
-interface AppointmentCategory {
-    name: string;
-    color: string;
-    textColor: string;
-}
-
 interface CalendarDay {
     day: number;
     isCurrentMonth: boolean;
@@ -58,7 +37,7 @@ interface CalendarDay {
 interface CreationFormProps {
     newAptTitle: string;
     setNewAptTitle: (title: string) => void;
-    appointmentCategories: AppointmentCategory[];
+    appointmentCategories: Category[];
     newAptCategory: string;
     setNewAptCategory: (category: string) => void;
     isDeletingCategory: boolean;
@@ -182,6 +161,11 @@ const AppointmentListPopover: React.FC<AppointmentListPopoverProps> = ({
 // --- MAIN PAGE COMPONENT ---
 export default function DochiCalendar() {
   // --- States ---
+  const [appointments, setAppointments] = useState<{ [date: string]: Appointment[] }>({});
+  const [appointmentCategories, setAppointmentCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const [selectedDate, setSelectedDate] = useState<string>(formatDate(today));
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
@@ -192,13 +176,7 @@ export default function DochiCalendar() {
   const [creationDropdown, setCreationDropdown] = useState<{ x: number, y: number, date: string, startTime: string } | null>(null);
   const [eventPopover, setEventPopover] = useState<{ x: number, y: number, appointment: Appointment, date: string } | null>(null);
   const [newAptTitle, setNewAptTitle] = useState("");
-  const [appointmentCategories, setAppointmentCategories] = useState<AppointmentCategory[]>([
-    { name: "Work", color: "#8B5CF6", textColor: "text-white" },
-    { name: "Personal", color: "#10B981", textColor: "text-white" },
-    { name: "Others", color: "#6B7280", textColor: "text-white" },
-    { name: "Urgent", color: "#EF4444", textColor: "text-white" },
-  ]);
-  const [newAptCategory, setNewAptCategory] = useState(appointmentCategories[0].name);
+  const [newAptCategory, setNewAptCategory] = useState("");
   const [newAptStartTime, setNewAptStartTime] = useState("09:00");
   const [newAptEndTime, setNewAptEndTime] = useState("10:00");
   const [isAddingCategory, setIsAddingCategory] = useState(false);
@@ -217,16 +195,31 @@ export default function DochiCalendar() {
   };
   const [weekViewStartDate, setWeekViewStartDate] = useState(getStartOfWeek(today));
 
-  // --- Initial Appointments Data ---
-  const [appointments, setAppointments] = useState<{ [date: string]: Appointment[] }>({
-    [formatDate(yesterday)]: [{ id: 1, title: "Product Design Course", startTime: "09:30", endTime: "12:00", color: "#10B981", category: "Personal", completed: false }],
-    [formatDate(today)]: [
-        { id: 3, title: "Usability testing", startTime: "09:00", endTime: "11:00", color: "#8B5CF6", category: "Work", completed: true },
-        { id: 4, title: "App Design", startTime: "13:00", endTime: "15:30", color: "#10B981", category: "Personal", completed: false },
-    ],
-    [formatDate(tomorrow)]: [{ id: 5, title: "Frontend development", startTime: "10:00", endTime: "13:00", color: "#3B82F6", category: "Work", completed: false }],
-    [formatDate(dayAfterTomorrow)]: [{ id: 7, title: "Dentist Appointment", startTime: "14:00", endTime: "15:00", color: "#EF4444", category: "Urgent", completed: false }]
-  });
+  // --- Fetch data from backend on component mount ---
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const [fetchedAppointments, fetchedCategories] = await Promise.all([
+          calendarService.getAppointments(),
+          calendarService.getCategories(),
+        ]);
+        setAppointments(fetchedAppointments);
+        setAppointmentCategories(fetchedCategories);
+        if (fetchedCategories.length > 0 && !newAptCategory) {
+          setNewAptCategory(fetchedCategories[0].name);
+        }
+      } catch (err) {
+        console.error("Failed to load calendar data:", err);
+        setError("Could not load calendar data. Please try again later.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
 
   // --- Utility Functions ---
   const timeToMinutes = (timeStr: string): number => {
@@ -257,66 +250,69 @@ export default function DochiCalendar() {
     setOpenDate(null);
   }, []);
 
-  // --- Event Handlers & Logic ---
-  const handleSaveNewAppointment = () => {
+  // --- Event Handlers & Logic (Updated to call the service) ---
+  const handleSaveNewAppointment = async () => {
     const targetDate = creationDropdown?.date || openDate || eventPopover?.date;
     if (!newAptTitle || !targetDate) return;
 
-    const categoryDetails = appointmentCategories.find(c => c.name === newAptCategory);
-
-    if (editingAppointmentId) {
-        setAppointments(prev => {
-            const newState = { ...prev };
-            const dayAppointments = (newState[targetDate] || []).map(apt => 
-                apt.id === editingAppointmentId ? {
-                    ...apt,
-                    title: newAptTitle,
-                    startTime: newAptStartTime,
-                    endTime: newAptEndTime,
-                    category: newAptCategory,
-                    color: categoryDetails?.color || '#6B7280',
-                } : apt
-            );
-            newState[targetDate] = dayAppointments.sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime));
-            return newState;
-        });
-    } else {
-        const newAppointment: Appointment = {
-            id: Date.now(),
-            title: newAptTitle,
-            startTime: newAptStartTime,
-            endTime: newAptEndTime,
-            category: newAptCategory,
-            color: categoryDetails?.color || '#6B7280',
-            completed: false,
+    try {
+      if (editingAppointmentId) {
+        const updates = {
+          title: newAptTitle,
+          startTime: newAptStartTime,
+          endTime: newAptEndTime,
+          category: newAptCategory,
+          color: appointmentCategories.find(c => c.name === newAptCategory)?.color || '#6B7280',
         };
-        setAppointments(prev => {
-            const dayApts = [...(prev[targetDate] || []), newAppointment];
-            return {
-                ...prev,
-                [targetDate]: dayApts.sort((a, b) => timeToMinutes(a.startTime) - timeToMinutes(b.startTime))
-            };
-        });
+        const updatedAppointment = await calendarService.updateAppointment(targetDate, editingAppointmentId, updates);
+        setAppointments(prev => ({
+          ...prev,
+          [targetDate]: (prev[targetDate] || []).map(apt => apt.id === editingAppointmentId ? updatedAppointment : apt),
+        }));
+      } else {
+        const newAppointmentData = {
+          title: newAptTitle,
+          startTime: newAptStartTime,
+          endTime: newAptEndTime,
+          category: newAptCategory,
+          color: appointmentCategories.find(c => c.name === newAptCategory)?.color || '#6B7280',
+        };
+        const createdAppointment = await calendarService.createAppointment(targetDate, newAppointmentData as any);
+        setAppointments(prev => ({
+          ...prev,
+          [targetDate]: [...(prev[targetDate] || []), createdAppointment],
+        }));
+      }
+      
+      closeAllPopups();
+      setNewAptTitle("");
+      if (appointmentCategories.length > 0) {
+        setNewAptCategory(appointmentCategories[0].name);
+      }
+    } catch (err) {
+      console.error("Failed to save appointment:", err);
+      setError("Failed to save appointment.");
     }
-
-    closeAllPopups();
-    setNewAptTitle("");
-    setNewAptCategory(appointmentCategories[0].name);
   };
 
-  const handleDeleteAppointment = (e: React.MouseEvent, dateStr: string, appointmentId: number) => {
+  const handleDeleteAppointment = async (e: React.MouseEvent, dateStr: string, appointmentId: number) => {
     e.stopPropagation();
-    setAppointments(prev => {
-        const newAppointmentsState = { ...prev };
-        const updatedAppointments = (newAppointmentsState[dateStr] || []).filter(apt => apt.id !== appointmentId);
-        if (updatedAppointments.length === 0) {
-            delete newAppointmentsState[dateStr];
-        } else {
-            newAppointmentsState[dateStr] = updatedAppointments;
+    try {
+      await calendarService.deleteAppointment(dateStr, appointmentId);
+      setAppointments(prev => {
+        const newDayApts = (prev[dateStr] || []).filter(apt => apt.id !== appointmentId);
+        if (newDayApts.length === 0) {
+          const newState = { ...prev };
+          delete newState[dateStr];
+          return newState;
         }
-        return newAppointmentsState;
-    });
-    closeAllPopups();
+        return { ...prev, [dateStr]: newDayApts };
+      });
+      closeAllPopups();
+    } catch (err) {
+      console.error("Failed to delete appointment:", err);
+      setError("Failed to delete appointment.");
+    }
   };
     
   const handleEditAppointment = (apt: Appointment, date: string) => {
@@ -341,22 +337,34 @@ export default function DochiCalendar() {
     setIsCreatingInDropdown(true);
   };
 
-  const handleAddNewCategory = () => {
+  const handleAddNewCategory = async () => {
     if(!newCategoryName) return;
-    const newCategory: AppointmentCategory = {
-        name: newCategoryName,
-        color: newCategoryColor,
-        textColor: "text-white"
-    };
-    setAppointmentCategories([...appointmentCategories, newCategory]);
-    setNewAptCategory(newCategory.name);
-    setNewCategoryName("");
-    setIsAddingCategory(false);
+    try {
+        const newCategoryData = {
+            name: newCategoryName,
+            color: newCategoryColor,
+            textColor: "text-white"
+        };
+        const createdCategory = await calendarService.createCategory(newCategoryData);
+        setAppointmentCategories([...appointmentCategories, createdCategory]);
+        setNewAptCategory(createdCategory.name);
+        setNewCategoryName("");
+        setIsAddingCategory(false);
+    } catch (err) {
+        console.error("Failed to add category:", err);
+        setError("Failed to add new category.");
+    }
   };
 
-  const handleDeleteCategory = (categoryNameToDelete: string) => {
+  const handleDeleteCategory = async (categoryNameToDelete: string) => {
     if (appointmentCategories.length <= 1) return;
-    setAppointmentCategories(appointmentCategories.filter(c => c.name !== categoryNameToDelete));
+    try {
+        await calendarService.deleteCategory(categoryNameToDelete);
+        setAppointmentCategories(appointmentCategories.filter(c => c.name !== categoryNameToDelete));
+    } catch(err) {
+        console.error("Failed to delete category:", err);
+        setError("Failed to delete category.");
+    }
   };
   
   const toggleDeleteMode = () => setIsDeletingCategory(!isDeletingCategory);
@@ -453,13 +461,11 @@ export default function DochiCalendar() {
   const handleGridClick = (e: React.MouseEvent, dayDateStr: string) => {
     if ((e.target as HTMLElement).closest('.event-block')) return;
 
-    // If a creation pop-up is already open, treat this click as an action to close it.
     if (creationDropdown) {
         closeAllPopups();
         return;
     }
     
-    // Otherwise, ensure all other pop-ups are closed and open a new creation pop-up.
     closeAllPopups();
 
     const grid = calendarGridRef.current;
@@ -488,13 +494,11 @@ export default function DochiCalendar() {
   const handleEventClick = (e: React.MouseEvent<HTMLDivElement>, apt: Appointment, date: string) => {
     e.stopPropagation();
 
-    // If the clicked appointment's popover is already open, close it.
     if (eventPopover?.appointment.id === apt.id) {
         closeAllPopups();
         return;
     }
     
-    // Otherwise, close any existing popover and open the new one.
     closeAllPopups();
 
     const eventRect = e.currentTarget.getBoundingClientRect();
@@ -538,6 +542,22 @@ export default function DochiCalendar() {
     return Math.ceil((((d.valueOf() - yearStart.valueOf()) / 86400000) + 1) / 7);
   };
   
+  if (isLoading) {
+    return (
+        <div className="flex h-screen w-full items-center justify-center bg-white">
+            <Loader2 className="w-8 h-8 animate-spin text-purple-600"/>
+        </div>
+    );
+  }
+
+  if (error) {
+    return (
+        <div className="flex h-screen w-full items-center justify-center bg-red-50 text-red-700">
+            Error: {error}
+        </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-white overflow-hidden font-sans">
         <style>{`
