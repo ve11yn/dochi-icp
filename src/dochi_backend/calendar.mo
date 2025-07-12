@@ -2,15 +2,15 @@
 import HashMap "mo:base/HashMap";
 import Text "mo:base/Text";
 import Array "mo:base/Array";
-import Time "mo:base/Time";
-import Int "mo:base/Int";
+// import Time "mo:base/Time";
+// import Int "mo:base/Int";
 import Nat "mo:base/Nat";
 import Result "mo:base/Result";
 import Option "mo:base/Option";
-import Principal "mo:base/Principal";
+// import Principal "mo:base/Principal";
 import Iter "mo:base/Iter";
 import Order "mo:base/Order";
-import Debug "mo:base/Debug";
+// import Debug "mo:base/Debug";
 
 actor CalendarBackend {
     // Type definitions

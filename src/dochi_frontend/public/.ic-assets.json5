@@ -1,0 +1,7 @@
+// src/dochi_frontend/.ic-assets.json5
+[
+  {
+    "match": "**/*",
+    "disable_security_policy_warning": true
+  }
+]

@@ -24,6 +24,24 @@ export default defineConfig(({ mode }) => {
       }
     },
 
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            vendor: [
+              'react',
+              'react-router-dom',
+              'react-dom',
+              '@dfinity/agent',
+              '@dfinity/auth-client',
+              '@dfinity/candid',
+              '@dfinity/principal',
+            ],
+          },
+        },
+      },
+    },
+
     define: {
       // Expose DFX_NETWORK to the application
       'process.env.DFX_NETWORK': JSON.stringify(env.DFX_NETWORK),
